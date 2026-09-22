@@ -79,6 +79,26 @@ public class ContaTestes
     }
 
     [Fact]
+    public void Debitar_DeveAtualizarVersaoLinha()
+    {
+        var conta = Conta.Criar(Guid.NewGuid());
+        conta.Creditar(Dinheiro.De(100m), "Depósito");
+        var versaoAnterior = conta.VersaoLinha;
+        conta.Debitar(Dinheiro.De(50m), "Saque");
+        conta.VersaoLinha.Should().NotBe(versaoAnterior);
+    }
+
+    [Fact]
+    public void Debitar_ComSaldoInsuficiente_ExcecaoContemValorSolicitado()
+    {
+        var conta = Conta.Criar(Guid.NewGuid());
+        conta.Creditar(Dinheiro.De(50m), "Depósito");
+        var acao = () => conta.Debitar(Dinheiro.De(100m), "Saque");
+        acao.Should().Throw<SaldoInsuficienteException>()
+            .Which.ValorSolicitado.Quantia.Should().Be(100m);
+    }
+
+    [Fact]
     public void MultiplosLancamentos_SaldoDeveSerConsistente()
     {
         var conta = Conta.Criar(Guid.NewGuid());

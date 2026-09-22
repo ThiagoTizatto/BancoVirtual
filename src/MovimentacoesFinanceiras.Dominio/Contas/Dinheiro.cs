@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace MovimentacoesFinanceiras.Dominio.Contas;
 
 public sealed class Dinheiro : IEquatable<Dinheiro>
@@ -16,5 +18,10 @@ public sealed class Dinheiro : IEquatable<Dinheiro>
     public bool Equals(Dinheiro? other) => other is not null && Quantia == other.Quantia;
     public override bool Equals(object? obj) => obj is Dinheiro d && Equals(d);
     public override int GetHashCode() => Quantia.GetHashCode();
-    public override string ToString() => $"R$ {Quantia:N2}";
+    public override string ToString() => $"R$ {Quantia.ToString("N2", CultureInfo.GetCultureInfo("pt-BR"))}";
+
+    public static bool operator ==(Dinheiro? left, Dinheiro? right) =>
+        left is null ? right is null : left.Equals(right);
+
+    public static bool operator !=(Dinheiro? left, Dinheiro? right) => !(left == right);
 }

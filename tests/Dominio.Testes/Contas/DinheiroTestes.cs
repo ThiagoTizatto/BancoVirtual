@@ -35,13 +35,20 @@ public class DinheiroTestes
     }
 
     [Fact]
-    public void ToString_RetornaFormatoMonetario()
+    public void ToString_RetornaFormatoMonetarioPtBr()
     {
-        // Verifica prefixo monetário e que o valor decimal está presente — independente do locale
-        var resultado = Dinheiro.De(1500.50m).ToString();
-        resultado.Should().StartWith("R$");
-        // 1500.50 formatado como N2 pode ser "1.500,50" (pt-BR) ou "1,500.50" (en-US)
-        // Verificamos que o resultado contém os dígitos do valor sem separadores
-        resultado.Should().MatchRegex(@"1[.,]?5[.,]?0{2}");
+        Dinheiro.De(1500.50m).ToString().Should().Be("R$ 1.500,50");
+    }
+
+    [Fact]
+    public void Igualdade_QuandoQuantiasDiferentes_NaoSaoIguais()
+    {
+        Dinheiro.De(100m).Should().NotBe(Dinheiro.De(200m));
+    }
+
+    [Fact]
+    public void GetHashCode_QuandoMesmaQuantia_MesmoHash()
+    {
+        Dinheiro.De(100m).GetHashCode().Should().Be(Dinheiro.De(100m).GetHashCode());
     }
 }

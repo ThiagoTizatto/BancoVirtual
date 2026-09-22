@@ -1,0 +1,99 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using MovimentacoesFinanceiras.Dominio.Contas;
+using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
+
+namespace Api.Testes.Contas;
+
+public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixture<FabricaDeAplicacao>
+{
+    private async Task<Guid> CriarContaComSaldo(HttpClient cliente, decimal saldoInicial)
+    {
+        var resposta = await cliente.PostAsJsonAsync("/contas", new { clienteId = Guid.NewGuid() });
+        var json = await resposta.Content.ReadFromJsonAsync<JsonElement>();
+        var contaId = json.GetProperty("id").GetGuid();
+
+        await cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
+            new { tipo = "Credito", valor = saldoInicial });
+
+        return contaId;
+    }
+
+    [Fact]
+    public async Task DebitosSimultaneos_NaoDevemGerarSaldoNegativo()
+    {
+        var cliente = fabrica.CreateClient();
+        var contaId = await CriarContaComSaldo(cliente, 100m);
+
+        var tarefas = Enumerable.Range(0, 10)
+            .Select(_ => cliente.PostAsJsonAsync(
+                $"/contas/{contaId}/movimentacoes",
+                new { tipo = "Debito", valor = 20m }))
+            .ToList();
+
+        var respostas = await Task.WhenAll(tarefas);
+
+        var sucessos = respostas.Count(r => r.StatusCode == HttpStatusCode.Created);
+        var falhas422 = respostas.Count(r => r.StatusCode == HttpStatusCode.UnprocessableEntity);
+
+        sucessos.Should().Be(5, "apenas 5 débitos de R$20 cabem num saldo de R$100");
+        falhas422.Should().BeGreaterThan(0, "os demais devem falhar por saldo insuficiente");
+
+        var respostaSaldo = await cliente.GetAsync($"/contas/{contaId}/saldo");
+        var json = await respostaSaldo.Content.ReadFromJsonAsync<JsonElement>();
+        json.GetProperty("saldo").GetDecimal().Should().Be(0m, "o saldo deve ser exatamente zero");
+    }
+
+    [Fact]
+    public async Task CreditosSimultaneos_DevemSerTodosPersistidos()
+    {
+        var cliente = fabrica.CreateClient();
+        var contaId = await CriarContaComSaldo(cliente, 0.01m);
+
+        var tarefas = Enumerable.Range(0, 10)
+            .Select(_ => cliente.PostAsJsonAsync(
+                $"/contas/{contaId}/movimentacoes",
+                new { tipo = "Credito", valor = 50m }))
+            .ToList();
+
+        var respostas = await Task.WhenAll(tarefas);
+        respostas.All(r => r.StatusCode == HttpStatusCode.Created)
+            .Should().BeTrue("todos os créditos devem ser aceitos");
+
+        var respostaSaldo = await cliente.GetAsync($"/contas/{contaId}/saldo");
+        var json = await respostaSaldo.Content.ReadFromJsonAsync<JsonElement>();
+        json.GetProperty("saldo").GetDecimal().Should().Be(500.01m);
+    }
+
+    [Fact]
+    public async Task AposMultiplasOperacoes_SaldoSnapshotDeveSerIgualAoSomaDosLancamentos()
+    {
+        using var escopo = fabrica.Services.CreateScope();
+        var contexto = escopo.ServiceProvider.GetRequiredService<ContextoBancoDados>();
+        var cliente = fabrica.CreateClient();
+
+        var contaId = await CriarContaComSaldo(cliente, 0.01m);
+
+        var creditosTarefas = Enumerable.Range(0, 20)
+            .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
+                new { tipo = "Credito", valor = 50m }));
+        await Task.WhenAll(creditosTarefas);
+
+        var debitosTarefas = Enumerable.Range(0, 5)
+            .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
+                new { tipo = "Debito", valor = 30m }));
+        await Task.WhenAll(debitosTarefas);
+
+        var conta = await contexto.Contas.FindAsync(contaId);
+        var saldoSnapshot = conta!.SaldoAtual;
+
+        var lancamentos = contexto.Lancamentos.Where(l => l.ContaId == contaId).ToList();
+        var saldoLedger = lancamentos.Sum(l => l.Tipo == TipoLancamento.Credito ? l.Valor : -l.Valor);
+
+        saldoSnapshot.Should().Be(saldoLedger,
+            "o snapshot saldo_atual nunca deve divergir do somatório dos lançamentos");
+    }
+}

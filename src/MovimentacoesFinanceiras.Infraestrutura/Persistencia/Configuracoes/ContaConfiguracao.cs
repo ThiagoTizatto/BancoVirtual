@@ -14,7 +14,12 @@ public class ContaConfiguracao : IEntityTypeConfiguration<Conta>
         builder.Property(c => c.Id).HasColumnName("id");
         builder.Property(c => c.ClienteId).HasColumnName("cliente_id").IsRequired();
         builder.Property(c => c.SaldoAtual).HasColumnName("saldo_atual").HasPrecision(18, 2).IsRequired();
-        builder.Property(c => c.VersaoLinha).HasColumnName("versao_linha").IsConcurrencyToken().IsRequired();
+        builder.Property(c => c.VersaoLinha)
+               .HasColumnName("versao_linha")
+               .HasColumnType("TEXT")
+               .HasConversion(g => g.ToString(), s => Guid.Parse(s))
+               .IsConcurrencyToken()
+               .IsRequired();
         builder.Property(c => c.CriadoEm).HasColumnName("criado_em").IsRequired();
 
         builder.HasIndex(c => c.ClienteId);

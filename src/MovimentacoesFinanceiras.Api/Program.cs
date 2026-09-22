@@ -29,7 +29,9 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(RegistrarMovimentacaoComando).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidacaoBehavior<,>));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opcoes =>
+        opcoes.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opcoes =>
 {
@@ -47,8 +49,9 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-using (var escopo = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var escopo = app.Services.CreateScope();
     var contexto = escopo.ServiceProvider.GetRequiredService<ContextoBancoDados>();
     await contexto.Database.EnsureCreatedAsync();
 }

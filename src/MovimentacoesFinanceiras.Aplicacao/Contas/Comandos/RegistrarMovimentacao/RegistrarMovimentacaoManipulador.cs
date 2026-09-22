@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using MovimentacoesFinanceiras.Dominio.Contas;
 using MovimentacoesFinanceiras.Dominio.Contas.Excecoes;
 using Polly;
@@ -7,7 +8,7 @@ using Polly.Retry;
 
 namespace MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
 
-public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio)
+public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio, IServiceScopeFactory escopoFactory)
     : IRequestHandler<RegistrarMovimentacaoComando, LancamentoResposta>
 {
     private static readonly AsyncRetryPolicy PoliticaRetentativa = Policy
@@ -16,6 +17,7 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio)
 
     public async Task<LancamentoResposta> Handle(RegistrarMovimentacaoComando request, CancellationToken cancellationToken)
     {
+        // Verifica idempotência antes de qualquer operação de escrita
         if (request.ChaveIdempotencia is not null)
         {
             var lancamentoExistente = await repositorio.ObterLancamentoPorChaveIdempotenciaAsync(
@@ -25,9 +27,14 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio)
                 return ToResposta(lancamentoExistente);
         }
 
+        // Cada tentativa do Polly usa um novo escopo de DI (e portanto um novo DbContext)
+        // para garantir que o contexto esteja limpo após DbUpdateConcurrencyException
         return await PoliticaRetentativa.ExecuteAsync(async () =>
         {
-            var conta = await repositorio.ObterPorIdAsync(request.ContaId, cancellationToken)
+            await using var escopo = escopoFactory.CreateAsyncScope();
+            var repo = escopo.ServiceProvider.GetRequiredService<IContaRepositorio>();
+
+            var conta = await repo.ObterPorIdAsync(request.ContaId, cancellationToken)
                 ?? throw new ContaNaoEncontradaException(request.ContaId);
 
             var dinheiro = Dinheiro.De(request.Valor);
@@ -36,7 +43,11 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio)
                 ? conta.Creditar(dinheiro, request.Descricao, request.ChaveIdempotencia)
                 : conta.Debitar(dinheiro, request.Descricao, request.ChaveIdempotencia);
 
-            await repositorio.SalvarAsync(cancellationToken);
+            // Adiciona explicitamente o lançamento ao contexto para garantir INSERT
+            // (o tracking automático via coleção de navegação não funciona corretamente
+            // com backing fields quando a conta é carregada sem Include)
+            await repo.AdicionarLancamentoAsync(lancamento, cancellationToken);
+            await repo.SalvarAsync(cancellationToken);
             return ToResposta(lancamento);
         });
     }

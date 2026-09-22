@@ -18,6 +18,9 @@ public class ContaRepositorio : IContaRepositorio
     public async Task AdicionarAsync(Conta conta, CancellationToken cancellationToken = default)
         => await _contexto.Contas.AddAsync(conta, cancellationToken);
 
+    public async Task AdicionarLancamentoAsync(Lancamento lancamento, CancellationToken cancellationToken = default)
+        => await _contexto.Lancamentos.AddAsync(lancamento, cancellationToken);
+
     public async Task SalvarAsync(CancellationToken cancellationToken = default)
         => await _contexto.SaveChangesAsync(cancellationToken);
 

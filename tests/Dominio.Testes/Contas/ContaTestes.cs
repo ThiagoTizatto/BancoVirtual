@@ -13,7 +13,7 @@ public class ContaTestes
         var conta = Conta.Criar(Guid.NewGuid());
 
         // Assert
-        conta.SaldoAtual.Should().Be(0m);
+        conta.SaldoAtual.Quantia.Should().Be(0m);
         conta.Lancamentos.Should().BeEmpty();
     }
 
@@ -27,7 +27,7 @@ public class ContaTestes
         conta.Creditar(Dinheiro.De(100m), "Depósito");
 
         // Assert
-        conta.SaldoAtual.Should().Be(100m);
+        conta.SaldoAtual.Quantia.Should().Be(100m);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class ContaTestes
         conta.Debitar(Dinheiro.De(80m), "Saque");
 
         // Assert
-        conta.SaldoAtual.Should().Be(120m);
+        conta.SaldoAtual.Quantia.Should().Be(120m);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class ContaTestes
         conta.Creditar(Dinheiro.De(200m), "Bônus");
 
         // Assert
-        conta.SaldoAtual.Should().Be(550m);
+        conta.SaldoAtual.Quantia.Should().Be(550m);
         conta.Lancamentos.Should().HaveCount(4);
     }
 }

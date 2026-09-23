@@ -30,7 +30,7 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
         {
             id = conta.Id,
             clienteId = conta.ClienteId,
-            saldoAtual = conta.SaldoAtual,
+            saldoAtual = conta.SaldoAtual.Quantia,
             criadoEm = conta.CriadoEm
         };
 

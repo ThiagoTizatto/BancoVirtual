@@ -80,4 +80,53 @@ public class DinheiroTestes
         // Assert
         hashA.Should().Be(hashB);
     }
+
+    [Fact]
+    public void Zero_TemQuantiaZero()
+    {
+        // Act & Assert
+        Dinheiro.Zero.Quantia.Should().Be(0m);
+    }
+
+    [Fact]
+    public void Somar_RetornaSomaDasQuantias()
+    {
+        // Arrange
+        var a = Dinheiro.De(100m);
+        var b = Dinheiro.De(50m);
+
+        // Act
+        var resultado = a + b;
+
+        // Assert
+        resultado.Quantia.Should().Be(150m);
+    }
+
+    [Fact]
+    public void Subtrair_RetornaDiferencaDasQuantias()
+    {
+        // Arrange
+        var a = Dinheiro.De(100m);
+        var b = Dinheiro.De(30m);
+
+        // Act
+        var resultado = a - b;
+
+        // Assert
+        resultado.Quantia.Should().Be(70m);
+    }
+
+    [Fact]
+    public void Maior_QuandoQuantiaSuperior_RetornaTrue()
+    {
+        // Act & Assert
+        (Dinheiro.De(100m) > Dinheiro.De(50m)).Should().BeTrue();
+    }
+
+    [Fact]
+    public void MenorOuIgual_QuandoQuantiasIguais_RetornaTrue()
+    {
+        // Act & Assert
+        (Dinheiro.De(50m) <= Dinheiro.De(50m)).Should().BeTrue();
+    }
 }

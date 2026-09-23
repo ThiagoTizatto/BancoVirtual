@@ -8,7 +8,7 @@ public sealed class Conta
 
     public Guid Id { get; private set; }
     public Guid ClienteId { get; private set; }
-    public decimal SaldoAtual { get; private set; }
+    public Dinheiro SaldoAtual { get; private set; } = Dinheiro.Zero;
     public Guid VersaoLinha { get; private set; }
     public DateTime CriadoEm { get; private set; }
 
@@ -18,7 +18,7 @@ public sealed class Conta
     {
         Id = Guid.NewGuid(),
         ClienteId = clienteId,
-        SaldoAtual = 0m,
+        SaldoAtual = Dinheiro.Zero,
         VersaoLinha = Guid.NewGuid(),
         CriadoEm = DateTime.UtcNow
     };
@@ -26,7 +26,7 @@ public sealed class Conta
     public Lancamento Creditar(Dinheiro valor, string? descricao, string? chaveIdempotencia = null)
     {
         ArgumentNullException.ThrowIfNull(valor);
-        SaldoAtual += valor.Quantia;
+        SaldoAtual += valor;
         VersaoLinha = Guid.NewGuid();
         var lancamento = Lancamento.CriarCredito(Id, valor.Quantia, descricao, chaveIdempotencia);
         _lancamentos.Add(lancamento);
@@ -36,9 +36,9 @@ public sealed class Conta
     public Lancamento Debitar(Dinheiro valor, string? descricao, string? chaveIdempotencia = null)
     {
         ArgumentNullException.ThrowIfNull(valor);
-        if (valor.Quantia > SaldoAtual)
-            throw new Excecoes.SaldoInsuficienteException(SaldoAtual, valor);
-        SaldoAtual -= valor.Quantia;
+        if (valor > SaldoAtual)
+            throw new Excecoes.SaldoInsuficienteException(SaldoAtual.Quantia, valor);
+        SaldoAtual -= valor;
         VersaoLinha = Guid.NewGuid();
         var lancamento = Lancamento.CriarDebito(Id, valor.Quantia, descricao, chaveIdempotencia);
         _lancamentos.Add(lancamento);

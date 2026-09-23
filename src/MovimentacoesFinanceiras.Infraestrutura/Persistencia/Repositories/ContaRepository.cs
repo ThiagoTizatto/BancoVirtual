@@ -76,7 +76,7 @@ public class ContaRepository(BancoDadosContext contexto) : IContaRepository
                 .Where(c => c.Id == contaId)
                 .Select(c => c.SaldoAtual)
                 .FirstAsync(cancellationToken);
-            throw new SaldoInsuficienteException(saldoAtual, valor);
+            throw new SaldoInsuficienteException(saldoAtual.Quantia, valor);
         }
 
         var lancamento = tipo == TipoLancamento.Credito

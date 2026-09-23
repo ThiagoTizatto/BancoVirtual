@@ -14,6 +14,6 @@ public class ConsultarSaldoHandler(IContaRepository repositorio)
         var conta = await repositorio.ObterPorIdAsync(request.ContaId, cancellationToken)
             ?? throw new ContaNaoEncontradaException(request.ContaId);
 
-        return new SaldoResponse(conta.SaldoAtual, DateTime.UtcNow);
+        return new SaldoResponse(conta.SaldoAtual.Quantia, DateTime.UtcNow);
     }
 }

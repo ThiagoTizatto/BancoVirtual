@@ -106,7 +106,7 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
                 var lancamentos = contexto.Lancamentos.Where(l => l.ContaId == contaId).ToList();
                 var saldoLedger = lancamentos.Sum(l => l.Tipo == TipoLancamento.Credito ? l.Valor : -l.Valor);
 
-                saldoSnapshot.Should().Be(saldoLedger,
+                saldoSnapshot.Quantia.Should().Be(saldoLedger,
                                 "o snapshot saldo_atual nunca deve divergir do somatório dos lançamentos");
         }
 }

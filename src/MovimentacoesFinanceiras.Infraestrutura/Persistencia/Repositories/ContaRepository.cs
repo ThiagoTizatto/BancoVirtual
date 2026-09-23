@@ -3,11 +3,9 @@ using MovimentacoesFinanceiras.Dominio.Contas;
 
 namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
 
-public class ContaRepository : IContaRepository
+public class ContaRepository(BancoDadosContext contexto) : IContaRepository
 {
-    private readonly BancoDadosContext _contexto;
-
-    public ContaRepository(BancoDadosContext contexto) => _contexto = contexto;
+    private readonly BancoDadosContext _contexto = contexto;
 
     public async Task<Conta?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _contexto.Contas.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);

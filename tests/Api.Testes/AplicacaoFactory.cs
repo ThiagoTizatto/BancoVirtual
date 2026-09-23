@@ -7,7 +7,7 @@ using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
 namespace Api.Testes;
 
-public class FabricaDeAplicacao : WebApplicationFactory<Program>, IAsyncLifetime
+public class AplicacaoFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"integracao-{Guid.NewGuid()}.db");
 
@@ -20,16 +20,16 @@ public class FabricaDeAplicacao : WebApplicationFactory<Program>, IAsyncLifetime
             // Remove o DbContext e DbContextOptions registrados pelo Program.cs (SQLite de produção)
             var descritores = servicos
                 .Where(d =>
-                    d.ServiceType == typeof(DbContextOptions<ContextoBancoDados>) ||
-                    d.ServiceType == typeof(ContextoBancoDados))
+                    d.ServiceType == typeof(DbContextOptions<BancoDadosContext>) ||
+                    d.ServiceType == typeof(BancoDadosContext))
                 .ToList();
 
             foreach (var descritor in descritores)
                 servicos.Remove(descritor);
 
             // Usa SQLite com arquivo temporário — garante concurrency tokens corretos
-            // e isolamento total entre instâncias de FabricaDeAplicacao
-            servicos.AddDbContext<ContextoBancoDados>(opcoes =>
+            // e isolamento total entre instâncias de AplicacaoFactory
+            servicos.AddDbContext<BancoDadosContext>(opcoes =>
                 opcoes
                     .UseSqlite($"Data Source={_dbPath}")
                     .EnableSensitiveDataLogging());
@@ -39,7 +39,7 @@ public class FabricaDeAplicacao : WebApplicationFactory<Program>, IAsyncLifetime
     public async Task InitializeAsync()
     {
         using var escopo = Services.CreateScope();
-        var ctx = escopo.ServiceProvider.GetRequiredService<ContextoBancoDados>();
+        var ctx = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
         await ctx.Database.EnsureCreatedAsync();
     }
 

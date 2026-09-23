@@ -1,30 +1,30 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Consultas.ConsultarSaldo;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Consultas.ConsultarSaldoEm;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ConsultarSaldo;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ConsultarSaldoEm;
 using MovimentacoesFinanceiras.Dominio.Contas;
 using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
-namespace MovimentacoesFinanceiras.Api.Controladores;
+namespace MovimentacoesFinanceiras.Api.Controllers;
 
 [ApiController]
 [Route("contas")]
 [Produces("application/json")]
-public class ContasControlador(IMediator mediador, ContextoBancoDados contexto, IContaRepositorio repositorio) : ControllerBase
+public class ContasController(IMediator mediador, BancoDadosContext contexto, IContaRepository repositorio) : ControllerBase
 {
     /// <summary>Cria uma nova conta para um cliente.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
     public async Task<IActionResult> CriarConta(
-        [FromBody] CriarContaRequisicao requisicao,
+        [FromBody] CriarContaRequest request,
         CancellationToken cancellationToken)
     {
-        var conta = Conta.Criar(requisicao.ClienteId);
+        var conta = Conta.Criar(request.ClienteId);
         await contexto.Contas.AddAsync(conta, cancellationToken);
         await contexto.SaveChangesAsync(cancellationToken);
 
-        var resposta = new
+        var response = new
         {
             id = conta.Id,
             clienteId = conta.ClienteId,
@@ -32,24 +32,24 @@ public class ContasControlador(IMediator mediador, ContextoBancoDados contexto, 
             criadoEm = conta.CriadoEm
         };
 
-        return CreatedAtAction(nameof(ConsultarSaldo), new { id = conta.Id }, resposta);
+        return CreatedAtAction(nameof(ConsultarSaldo), new { id = conta.Id }, response);
     }
 
     /// <summary>Registra uma movimentação financeira (crédito ou débito).</summary>
     [HttpPost("{id:guid}/movimentacoes")]
-    [ProducesResponseType(typeof(LancamentoResposta), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(LancamentoResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegistrarMovimentacao(
         Guid id,
-        [FromBody] RegistrarMovimentacaoRequisicao requisicao,
+        [FromBody] RegistrarMovimentacaoRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? chaveIdempotencia,
         CancellationToken cancellationToken)
     {
-        var comando = new RegistrarMovimentacaoComando(id, requisicao.Tipo, requisicao.Valor, requisicao.Descricao, chaveIdempotencia);
-        var resposta = await mediador.Send(comando, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, resposta);
+        var command = new RegistrarMovimentacaoCommand(id, request.Tipo, request.Valor, request.Descricao, chaveIdempotencia);
+        var response = await mediador.Send(command, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 
     /// <summary>
@@ -58,8 +58,8 @@ public class ContasControlador(IMediator mediador, ContextoBancoDados contexto, 
     /// Com o parâmetro 'em': retorna o saldo no ponto no tempo informado.
     /// </summary>
     [HttpGet("{id:guid}/saldo")]
-    [ProducesResponseType(typeof(SaldoResposta), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(SaldoHistoricoResposta), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SaldoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SaldoHistoricoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConsultarSaldo(
         Guid id,
@@ -68,16 +68,12 @@ public class ContasControlador(IMediator mediador, ContextoBancoDados contexto, 
     {
         if (em.HasValue)
         {
-            var consulta = new ConsultarSaldoEmConsulta(id, em.Value.ToUniversalTime());
-            var resposta = await mediador.Send(consulta, cancellationToken);
-            return Ok(resposta);
+            var queryHistorico = new ConsultarSaldoEmQuery(id, em.Value.ToUniversalTime());
+            return Ok(await mediador.Send(queryHistorico, cancellationToken));
         }
-        else
-        {
-            var consulta = new ConsultarSaldoConsulta(id);
-            var resposta = await mediador.Send(consulta, cancellationToken);
-            return Ok(resposta);
-        }
+
+        var query = new ConsultarSaldoQuery(id);
+        return Ok(await mediador.Send(query, cancellationToken));
     }
 
     /// <summary>Lista o extrato paginado da conta.</summary>
@@ -112,5 +108,5 @@ public class ContasControlador(IMediator mediador, ContextoBancoDados contexto, 
     }
 }
 
-public record CriarContaRequisicao(Guid ClienteId);
-public record RegistrarMovimentacaoRequisicao(TipoLancamento Tipo, decimal Valor, string? Descricao);
+public record CriarContaRequest(Guid ClienteId);
+public record RegistrarMovimentacaoRequest(TipoLancamento Tipo, decimal Valor, string? Descricao);

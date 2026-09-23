@@ -1,6 +1,6 @@
 namespace MovimentacoesFinanceiras.Dominio.Contas;
 
-public interface IContaRepositorio
+public interface IContaRepository
 {
     Task<Conta?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Lancamento?> ObterLancamentoPorChaveIdempotenciaAsync(string chave, CancellationToken cancellationToken = default);

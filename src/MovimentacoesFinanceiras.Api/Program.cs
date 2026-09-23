@@ -1,11 +1,11 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Comportamentos;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Behaviors;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 using MovimentacoesFinanceiras.Dominio.Contas;
 using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
-using MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositorios;
+using MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,17 +17,17 @@ builder.Host.UseSerilog((ctx, config) =>
         .Enrich.WithMachineName()
         .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()));
 
-builder.Services.AddDbContext<ContextoBancoDados>(opcoes =>
+builder.Services.AddDbContext<BancoDadosContext>(opcoes =>
     opcoes.UseSqlite(builder.Configuration.GetConnectionString("Padrao")
         ?? "Data Source=movimentacoes.db"));
 
-builder.Services.AddScoped<IContaRepositorio, ContaRepositorio>();
+builder.Services.AddScoped<IContaRepository, ContaRepository>();
 
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(RegistrarMovimentacaoComando).Assembly));
+    cfg.RegisterServicesFromAssembly(typeof(RegistrarMovimentacaoCommand).Assembly));
 
-builder.Services.AddValidatorsFromAssembly(typeof(RegistrarMovimentacaoComando).Assembly);
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidacaoBehavior<,>));
+builder.Services.AddValidatorsFromAssembly(typeof(RegistrarMovimentacaoCommand).Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddControllers()
     .AddJsonOptions(opcoes =>
@@ -45,14 +45,14 @@ builder.Services.AddSwaggerGen(opcoes =>
 });
 
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<ContextoBancoDados>("banco-de-dados");
+    .AddDbContextCheck<BancoDadosContext>("banco-de-dados");
 
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
     using var escopo = app.Services.CreateScope();
-    var contexto = escopo.ServiceProvider.GetRequiredService<ContextoBancoDados>();
+    var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
     await contexto.Database.EnsureCreatedAsync();
 }
 

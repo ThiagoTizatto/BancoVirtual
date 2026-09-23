@@ -8,7 +8,7 @@ using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
 namespace Api.Testes.Contas;
 
-public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixture<FabricaDeAplicacao>
+public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<AplicacaoFactory>
 {
     private async Task<Guid> CriarContaComSaldo(HttpClient cliente, decimal saldoInicial)
     {
@@ -25,9 +25,11 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
     [Fact]
     public async Task DebitosSimultaneos_NaoDevemGerarSaldoNegativo()
     {
+        // Arrange
         var cliente = fabrica.CreateClient();
         var contaId = await CriarContaComSaldo(cliente, 100m);
 
+        // Act
         var tarefas = Enumerable.Range(0, 10)
             .Select(_ => cliente.PostAsJsonAsync(
                 $"/contas/{contaId}/movimentacoes",
@@ -36,6 +38,7 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
 
         var respostas = await Task.WhenAll(tarefas);
 
+        // Assert
         var sucessos = respostas.Count(r => r.StatusCode == HttpStatusCode.Created);
         var falhas422 = respostas.Count(r => r.StatusCode == HttpStatusCode.UnprocessableEntity);
 
@@ -50,9 +53,11 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
     [Fact]
     public async Task CreditosSimultaneos_DevemSerTodosPersistidos()
     {
+        // Arrange
         var cliente = fabrica.CreateClient();
         var contaId = await CriarContaComSaldo(cliente, 0.01m);
 
+        // Act
         var tarefas = Enumerable.Range(0, 10)
             .Select(_ => cliente.PostAsJsonAsync(
                 $"/contas/{contaId}/movimentacoes",
@@ -60,6 +65,8 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
             .ToList();
 
         var respostas = await Task.WhenAll(tarefas);
+
+        // Assert
         respostas.All(r => r.StatusCode == HttpStatusCode.Created)
             .Should().BeTrue("todos os créditos devem ser aceitos");
 
@@ -71,12 +78,13 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
     [Fact]
     public async Task AposMultiplasOperacoes_SaldoSnapshotDeveSerIgualAoSomaDosLancamentos()
     {
+        // Arrange
         using var escopo = fabrica.Services.CreateScope();
-        var contexto = escopo.ServiceProvider.GetRequiredService<ContextoBancoDados>();
+        var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
         var cliente = fabrica.CreateClient();
-
         var contaId = await CriarContaComSaldo(cliente, 0.01m);
 
+        // Act
         var creditosTarefas = Enumerable.Range(0, 20)
             .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
                 new { tipo = "Credito", valor = 50m }));
@@ -87,6 +95,7 @@ public class ContasConcorrenciaTestes(FabricaDeAplicacao fabrica) : IClassFixtur
                 new { tipo = "Debito", valor = 30m }));
         await Task.WhenAll(debitosTarefas);
 
+        // Assert
         var conta = await contexto.Contas.FindAsync(contaId);
         var saldoSnapshot = conta!.SaldoAtual;
 

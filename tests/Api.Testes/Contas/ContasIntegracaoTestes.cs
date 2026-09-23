@@ -5,10 +5,9 @@ using FluentAssertions;
 
 namespace Api.Testes.Contas;
 
-public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<FabricaDeAplicacao>
+public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<AplicacaoFactory>
 {
     private readonly HttpClient _cliente = fabrica.CreateClient();
-    private static readonly JsonSerializerOptions OpcoesJson = new() { PropertyNameCaseInsensitive = true };
 
     private async Task<Guid> CriarContaAsync()
     {
@@ -21,7 +20,10 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task PostContas_DeveRetornar201ComIdGerado()
     {
+        // Act
         var resposta = await _cliente.PostAsJsonAsync("/contas", new { clienteId = Guid.NewGuid() });
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("id").GetGuid().Should().NotBeEmpty();
@@ -31,10 +33,15 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task PostMovimentacoes_Credito_DeveRetornar201()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
+
+        // Act
         var resposta = await _cliente.PostAsJsonAsync(
             $"/contas/{contaId}/movimentacoes",
             new { tipo = "Credito", valor = 100.00m, descricao = "Depósito" });
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("valor").GetDecimal().Should().Be(100m);
@@ -43,20 +50,30 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task PostMovimentacoes_DebitoComSaldoSuficiente_DeveRetornar201()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
         await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
             new { tipo = "Credito", valor = 200m });
+
+        // Act
         var resposta = await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
             new { tipo = "Debito", valor = 80m });
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
     public async Task PostMovimentacoes_DebitoSemSaldo_DeveRetornar422()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
+
+        // Act
         var resposta = await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
             new { tipo = "Debito", valor = 100m });
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("tipo").GetString().Should().Be("saldo-insuficiente");
@@ -65,11 +82,15 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task GetSaldo_DeveRetornarSaldoAtualCorreto()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
         await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Credito", valor = 300m });
         await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Debito", valor = 50m });
 
+        // Act
         var resposta = await _cliente.GetAsync($"/contas/{contaId}/saldo");
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("saldo").GetDecimal().Should().Be(250m);
@@ -78,6 +99,7 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task GetSaldoEm_DeveRetornarSaldoHistoricoCorreto()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
         await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Credito", valor = 100m });
         await Task.Delay(50);
@@ -85,8 +107,11 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
         await Task.Delay(50);
         await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Credito", valor = 200m });
 
+        // Act
         var dataFormatada = Uri.EscapeDataString(marcaTemporal.ToString("o"));
         var resposta = await _cliente.GetAsync($"/contas/{contaId}/saldo?em={dataFormatada}");
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("saldo").GetDecimal().Should().Be(100m);
@@ -95,30 +120,41 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task PostMovimentacoes_ComValorZero_DeveRetornar400()
     {
+        // Arrange
         var contaId = await CriarContaAsync();
+
+        // Act
         var resposta = await _cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
             new { tipo = "Credito", valor = 0m });
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task GetSaldo_ContaInexistente_DeveRetornar404()
     {
+        // Act
         var resposta = await _cliente.GetAsync($"/contas/{Guid.NewGuid()}/saldo");
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task PostMovimentacoes_ComMesmaChaveIdempotencia_NaoDeveDuplicarLancamento()
     {
+        // Arrange
         var clienteLocal = fabrica.CreateClient();
         var contaId = await CriarContaAsync();
         var chave = Guid.NewGuid().ToString();
         clienteLocal.DefaultRequestHeaders.Add("Idempotency-Key", chave);
 
+        // Act
         await clienteLocal.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Credito", valor = 100m });
         await clienteLocal.PostAsJsonAsync($"/contas/{contaId}/movimentacoes", new { tipo = "Credito", valor = 100m });
 
+        // Assert
         var resposta = await _cliente.GetAsync($"/contas/{contaId}/saldo");
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         corpo.GetProperty("saldo").GetDecimal().Should().Be(100m);
@@ -127,7 +163,10 @@ public class ContasIntegracaoTestes(FabricaDeAplicacao fabrica) : IClassFixture<
     [Fact]
     public async Task GetSaude_DeveRetornar200()
     {
+        // Act
         var resposta = await _cliente.GetAsync("/saude");
+
+        // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

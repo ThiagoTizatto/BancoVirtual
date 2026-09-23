@@ -1,11 +1,11 @@
 using FluentValidation;
 using MovimentacoesFinanceiras.Dominio.Contas;
 
-namespace MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
+namespace MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 
-public class RegistrarMovimentacaoValidador : AbstractValidator<RegistrarMovimentacaoComando>
+public class RegistrarMovimentacaoValidator : AbstractValidator<RegistrarMovimentacaoCommand>
 {
-    public RegistrarMovimentacaoValidador()
+    public RegistrarMovimentacaoValidator()
     {
         RuleFor(x => x.ContaId)
             .NotEmpty().WithMessage("O identificador da conta é obrigatório.");

@@ -3,15 +3,15 @@ using MovimentacoesFinanceiras.Dominio.Contas;
 
 namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
-public class ContextoBancoDados : DbContext
+public class BancoDadosContext : DbContext
 {
-    public ContextoBancoDados(DbContextOptions<ContextoBancoDados> options) : base(options) { }
+    public BancoDadosContext(DbContextOptions<BancoDadosContext> options) : base(options) { }
 
     public DbSet<Conta> Contas => Set<Conta>();
     public DbSet<Lancamento> Lancamentos => Set<Lancamento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContextoBancoDados).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BancoDadosContext).Assembly);
     }
 }

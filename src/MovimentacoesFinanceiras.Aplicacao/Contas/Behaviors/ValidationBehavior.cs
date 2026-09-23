@@ -1,9 +1,9 @@
 using FluentValidation;
 using MediatR;
 
-namespace MovimentacoesFinanceiras.Aplicacao.Contas.Comportamentos;
+namespace MovimentacoesFinanceiras.Aplicacao.Contas.Behaviors;
 
-public class ValidacaoBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validadores)
+public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validadores)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {

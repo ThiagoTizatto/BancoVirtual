@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using MovimentacoesFinanceiras.Dominio.Contas;
 
-namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositorios;
+namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
 
-public class ContaRepositorio : IContaRepositorio
+public class ContaRepository : IContaRepository
 {
-    private readonly ContextoBancoDados _contexto;
+    private readonly BancoDadosContext _contexto;
 
-    public ContaRepositorio(ContextoBancoDados contexto) => _contexto = contexto;
+    public ContaRepository(BancoDadosContext contexto) => _contexto = contexto;
 
     public async Task<Conta?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _contexto.Contas.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);

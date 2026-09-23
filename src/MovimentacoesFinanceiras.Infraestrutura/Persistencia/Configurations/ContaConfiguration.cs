@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MovimentacoesFinanceiras.Dominio.Contas;
 
-namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Configuracoes;
+namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Configurations;
 
-public class ContaConfiguracao : IEntityTypeConfiguration<Conta>
+public class ContaConfiguration : IEntityTypeConfiguration<Conta>
 {
     public void Configure(EntityTypeBuilder<Conta> builder)
     {

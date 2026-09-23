@@ -1,8 +1,8 @@
 using MovimentacoesFinanceiras.Dominio.Contas;
 
-namespace MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
+namespace MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 
-public record LancamentoResposta(
+public record LancamentoResponse(
     Guid Id,
     TipoLancamento Tipo,
     decimal Valor,

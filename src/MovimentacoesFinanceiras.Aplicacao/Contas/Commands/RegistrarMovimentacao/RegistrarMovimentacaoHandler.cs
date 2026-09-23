@@ -6,16 +6,16 @@ using MovimentacoesFinanceiras.Dominio.Contas.Excecoes;
 using Polly;
 using Polly.Retry;
 
-namespace MovimentacoesFinanceiras.Aplicacao.Contas.Comandos.RegistrarMovimentacao;
+namespace MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 
-public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio, IServiceScopeFactory escopoFactory)
-    : IRequestHandler<RegistrarMovimentacaoComando, LancamentoResposta>
+public class RegistrarMovimentacaoHandler(IContaRepository repositorio, IServiceScopeFactory escopoFactory)
+    : IRequestHandler<RegistrarMovimentacaoCommand, LancamentoResponse>
 {
     private static readonly AsyncRetryPolicy PoliticaRetentativa = Policy
         .Handle<DbUpdateConcurrencyException>()
         .WaitAndRetryAsync(3, tentativa => TimeSpan.FromMilliseconds(50 * Math.Pow(2, tentativa)));
 
-    public async Task<LancamentoResposta> Handle(RegistrarMovimentacaoComando request, CancellationToken cancellationToken)
+    public async Task<LancamentoResponse> Handle(RegistrarMovimentacaoCommand request, CancellationToken cancellationToken)
     {
         // Verifica idempotência antes de qualquer operação de escrita
         if (request.ChaveIdempotencia is not null)
@@ -24,7 +24,7 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio, ISe
                 request.ChaveIdempotencia, cancellationToken);
 
             if (lancamentoExistente is not null)
-                return ToResposta(lancamentoExistente);
+                return ToResponse(lancamentoExistente);
         }
 
         // Cada tentativa do Polly usa um novo escopo de DI (e portanto um novo DbContext)
@@ -32,7 +32,7 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio, ISe
         return await PoliticaRetentativa.ExecuteAsync(async () =>
         {
             await using var escopo = escopoFactory.CreateAsyncScope();
-            var repo = escopo.ServiceProvider.GetRequiredService<IContaRepositorio>();
+            var repo = escopo.ServiceProvider.GetRequiredService<IContaRepository>();
 
             var conta = await repo.ObterPorIdAsync(request.ContaId, cancellationToken)
                 ?? throw new ContaNaoEncontradaException(request.ContaId);
@@ -48,10 +48,10 @@ public class RegistrarMovimentacaoManipulador(IContaRepositorio repositorio, ISe
             // com backing fields quando a conta é carregada sem Include)
             await repo.AdicionarLancamentoAsync(lancamento, cancellationToken);
             await repo.SalvarAsync(cancellationToken);
-            return ToResposta(lancamento);
+            return ToResponse(lancamento);
         });
     }
 
-    private static LancamentoResposta ToResposta(Lancamento lancamento) =>
+    private static LancamentoResponse ToResponse(Lancamento lancamento) =>
         new(lancamento.Id, lancamento.Tipo, lancamento.Valor, lancamento.Descricao, lancamento.CriadoEm);
 }

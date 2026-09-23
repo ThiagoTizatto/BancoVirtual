@@ -76,7 +76,7 @@ public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<Ap
         // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
-        corpo.GetProperty("tipo").GetString().Should().Be("saldo-insuficiente");
+        corpo.GetProperty("title").GetString().Should().Be("Saldo insuficiente para realizar o débito");
     }
 
     [Fact]

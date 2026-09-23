@@ -1,13 +1,15 @@
-using System.Text.Json;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using MovimentacoesFinanceiras.Dominio.Contas.Excecoes;
 
 namespace MovimentacoesFinanceiras.Api.Middlewares;
 
-public class TratadorDeExcecoesMiddleware(RequestDelegate proximo, ILogger<TratadorDeExcecoesMiddleware> logger)
+public class TratadorDeExcecoesMiddleware(
+    RequestDelegate proximo,
+    IProblemDetailsService problemDetailsService,
+    ILogger<TratadorDeExcecoesMiddleware> logger)
 {
-    private static readonly JsonSerializerOptions OpcoesJson = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
     public async Task InvokeAsync(HttpContext contexto)
     {
         ArgumentNullException.ThrowIfNull(contexto);
@@ -18,55 +20,55 @@ public class TratadorDeExcecoesMiddleware(RequestDelegate proximo, ILogger<Trata
         }
         catch (ValidationException ex)
         {
-            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
-            contexto.Response.ContentType = "application/problem+json";
-            var problema = new
-            {
-                tipo = "requisicao-invalida",
-                titulo = "A requisição contém dados inválidos",
-                status = 400,
-                erros = ex.Errors.Select(e => e.ErrorMessage)
-            };
-            await contexto.Response.WriteAsync(JsonSerializer.Serialize(problema, OpcoesJson));
+            await EscreverProblemaAsync(contexto, StatusCodes.Status400BadRequest,
+                "A requisição contém dados inválidos", null,
+                new Dictionary<string, object?> { ["erros"] = ex.Errors.Select(e => e.ErrorMessage).ToArray() });
         }
         catch (SaldoInsuficienteException ex)
         {
-            contexto.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-            contexto.Response.ContentType = "application/problem+json";
-            var problema = new
-            {
-                tipo = "saldo-insuficiente",
-                titulo = "Saldo insuficiente para realizar o débito",
-                status = 422,
-                detalhe = ex.Message
-            };
-            await contexto.Response.WriteAsync(JsonSerializer.Serialize(problema, OpcoesJson));
+            await EscreverProblemaAsync(contexto, StatusCodes.Status422UnprocessableEntity,
+                "Saldo insuficiente para realizar o débito", ex.Message, null);
         }
         catch (ContaNaoEncontradaException ex)
         {
-            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
-            contexto.Response.ContentType = "application/problem+json";
-            var problema = new
-            {
-                tipo = "conta-nao-encontrada",
-                titulo = "Conta não encontrada",
-                status = 404,
-                detalhe = ex.Message
-            };
-            await contexto.Response.WriteAsync(JsonSerializer.Serialize(problema, OpcoesJson));
+            await EscreverProblemaAsync(contexto, StatusCodes.Status404NotFound,
+                "Conta não encontrada", ex.Message, null);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro nao tratado");
-            contexto.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            contexto.Response.ContentType = "application/problem+json";
-            var problema = new
-            {
-                tipo = "erro-interno",
-                titulo = "Ocorreu um erro interno. Tente novamente.",
-                status = 500
-            };
-            await contexto.Response.WriteAsync(JsonSerializer.Serialize(problema, OpcoesJson));
+            await EscreverProblemaAsync(contexto, StatusCodes.Status500InternalServerError,
+                "Ocorreu um erro interno. Tente novamente.", null, null);
         }
+    }
+
+    private async Task EscreverProblemaAsync(
+        HttpContext contexto, int status, string titulo, string? detalhe,
+        IDictionary<string, object?>? extensoes)
+    {
+        contexto.Response.StatusCode = status;
+
+        var problema = new ProblemDetails
+        {
+            Status = status,
+            Title = titulo,
+            Detail = detalhe,
+            Instance = contexto.Request.Path
+        };
+
+        if (extensoes is not null)
+        {
+            foreach (var (chave, valor) in extensoes)
+                problema.Extensions[chave] = valor;
+        }
+
+        if (contexto.Items.TryGetValue("correlacao_id", out var correlacao) && correlacao is not null)
+            problema.Extensions["correlacao_id"] = correlacao;
+
+        await problemDetailsService.WriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = contexto,
+            ProblemDetails = problema
+        });
     }
 }

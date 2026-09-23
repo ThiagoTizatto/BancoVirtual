@@ -32,3 +32,4 @@ A partir do ADR-007, cada decisão é um arquivo separado, referente ao
 | [ADR-026](0026-load-test-nbomber.md) | NBomber para load test, fora do CI | Aceito |
 | [ADR-027](0027-ci-github-actions.md) | CI GitHub Actions com -warnaserror | Aceito |
 | [ADR-028](0028-idempotencia-sem-ttl.md) | Idempotência sem TTL (com trilha de evolução) | Aceito |
+| [ADR-029](0029-update-atomico-saldo.md) | Update atômico do saldo (elimina contenção sob concorrência) | Aceito |

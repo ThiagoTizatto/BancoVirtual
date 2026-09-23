@@ -17,7 +17,7 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
                 var contaId = json.GetProperty("id").GetGuid();
 
                 await cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
-                        new { tipo = "Credito", valor = saldoInicial });
+                                new { tipo = "Credito", valor = saldoInicial });
 
                 return contaId;
         }
@@ -31,10 +31,10 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
 
                 // Act
                 var tarefas = Enumerable.Range(0, 10)
-                        .Select(_ => cliente.PostAsJsonAsync(
-                                $"/contas/{contaId}/movimentacoes",
-                                new { tipo = "Debito", valor = 20m }))
-                        .ToList();
+                                .Select(_ => cliente.PostAsJsonAsync(
+                                                $"/contas/{contaId}/movimentacoes",
+                                                new { tipo = "Debito", valor = 20m }))
+                                .ToList();
 
                 var respostas = await Task.WhenAll(tarefas);
 
@@ -60,29 +60,23 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
 
                 // Act
                 var tarefas = Enumerable.Range(0, 10)
-                        .Select(_ => cliente.PostAsJsonAsync(
-                                $"/contas/{contaId}/movimentacoes",
-                                new { tipo = "Credito", valor = 50m }))
-                        .ToList();
+                                .Select(_ => cliente.PostAsJsonAsync(
+                                                $"/contas/{contaId}/movimentacoes",
+                                                new { tipo = "Credito", valor = 50m }))
+                                .ToList();
 
                 var respostas = await Task.WhenAll(tarefas);
 
                 // Assert
-                // Créditos nunca falham por regra de negócio (não há restrição de saldo para creditar).
-                // Com Postgres e concorrência otimista, alguns podem falhar após os retries sob alta contenção.
-                // A invariante de negócio correta é: o snapshot final deve refletir exatamente os créditos
-                // bem-sucedidos, sem perda de dados e sem saldo negativo.
-                var sucessos = respostas.Count(r => r.StatusCode == HttpStatusCode.Created);
-                sucessos.Should().BeGreaterThan(0, "ao menos um crédito deve ser aceito");
+                // Com update atômico no banco, créditos são incrementos incondicionais:
+                // NENHUM se perde sob concorrência, todos retornam 201.
+                respostas.All(r => r.StatusCode == HttpStatusCode.Created)
+                    .Should().BeTrue("todos os créditos devem ser aceitos e persistidos");
 
                 var respostaSaldo = await cliente.GetAsync($"/contas/{contaId}/saldo");
                 var json = await respostaSaldo.Content.ReadFromJsonAsync<JsonElement>();
-                var saldoFinal = json.GetProperty("saldo").GetDecimal();
-
-                // Saldo esperado: 0.01 (inicial) + 50 * sucessos
-                var saldoEsperado = 0.01m + (50m * sucessos);
-                saldoFinal.Should().Be(saldoEsperado,
-                        "o saldo deve refletir exatamente os créditos bem-sucedidos");
+                json.GetProperty("saldo").GetDecimal().Should().Be(500.01m,
+                    "0.01 inicial + 10 créditos de R$50 = R$500,01");
         }
 
         [Fact]
@@ -96,13 +90,13 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
 
                 // Act
                 var creditosTarefas = Enumerable.Range(0, 20)
-                        .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
-                                new { tipo = "Credito", valor = 50m }));
+                                .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
+                                                new { tipo = "Credito", valor = 50m }));
                 await Task.WhenAll(creditosTarefas);
 
                 var debitosTarefas = Enumerable.Range(0, 5)
-                        .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
-                                new { tipo = "Debito", valor = 30m }));
+                                .Select(_ => cliente.PostAsJsonAsync($"/contas/{contaId}/movimentacoes",
+                                                new { tipo = "Debito", valor = 30m }));
                 await Task.WhenAll(debitosTarefas);
 
                 // Assert
@@ -113,6 +107,6 @@ public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<
                 var saldoLedger = lancamentos.Sum(l => l.Tipo == TipoLancamento.Credito ? l.Valor : -l.Valor);
 
                 saldoSnapshot.Should().Be(saldoLedger,
-                        "o snapshot saldo_atual nunca deve divergir do somatório dos lançamentos");
+                                "o snapshot saldo_atual nunca deve divergir do somatório dos lançamentos");
         }
 }

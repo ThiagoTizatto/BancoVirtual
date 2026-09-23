@@ -10,4 +10,7 @@ public interface IContaRepository
     Task<decimal> ConsultarSaldoEmAsync(Guid contaId, DateTime dataReferencia, CancellationToken cancellationToken = default);
     Task<(IReadOnlyList<Lancamento> Itens, int Total)> ListarLancamentosAsync(
         Guid contaId, int pagina, int tamanhoPagina, CancellationToken cancellationToken = default);
+    Task<Lancamento> RegistrarMovimentacaoAsync(
+        Guid contaId, TipoLancamento tipo, Dinheiro valor,
+        string? descricao, string? chaveIdempotencia, CancellationToken cancellationToken = default);
 }

@@ -1,66 +1,40 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Behaviors;
-using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
-using MovimentacoesFinanceiras.Dominio.Contas;
+using MovimentacoesFinanceiras.Api;
+using MovimentacoesFinanceiras.Aplicacao;
+using MovimentacoesFinanceiras.Dominio;
+using MovimentacoesFinanceiras.Infraestrutura;
 using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
-using MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, config) =>
-        config
-                .ReadFrom.Configuration(ctx.Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()));
+    config
+        .ReadFrom.Configuration(ctx.Configuration)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()));
 
-builder.Services.AddDbContext<BancoDadosContext>(opcoes =>
-    opcoes.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")
-        ?? "Host=localhost;Port=5432;Database=movimentacoes;Username=postgres;Password=postgres"));
-
-builder.Services.AddScoped<IContaRepository, ContaRepository>();
-
-builder.Services.AddMediatR(cfg =>
-        cfg.RegisterServicesFromAssembly(typeof(RegistrarMovimentacaoCommand).Assembly));
-
-builder.Services.AddValidatorsFromAssembly(typeof(RegistrarMovimentacaoCommand).Assembly);
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-builder.Services.AddControllers()
-        .AddJsonOptions(opcoes =>
-                opcoes.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(opcoes =>
-{
-        opcoes.SwaggerDoc("v1", new()
-        {
-                Title = "API de Movimentações Financeiras",
-                Description = "Registra movimentações financeiras e consulta saldos de contas bancárias. " +
-                                            "Utiliza CQRS com ledger append-only para rastreabilidade completa.",
-                Version = "v1"
-        });
-});
-
-builder.Services.AddHealthChecks()
-        .AddDbContextCheck<BancoDadosContext>("banco-de-dados");
+builder.Services
+    .AddDominio()
+    .AddAplicacao()
+    .AddInfraestrutura(builder.Configuration)
+    .AddApi();
 
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
-        using var escopo = app.Services.CreateScope();
-        var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
-        await contexto.Database.MigrateAsync();
+    using var escopo = app.Services.CreateScope();
+    var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
+    await contexto.Database.MigrateAsync();
 }
 
 app.UseSwagger();
 app.UseSwaggerUI(opcoes =>
 {
-        opcoes.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Movimentações Financeiras v1");
-        opcoes.RoutePrefix = string.Empty;
+    opcoes.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Movimentações Financeiras v1");
+    opcoes.RoutePrefix = string.Empty;
 });
 
 app.UseSerilogRequestLogging();

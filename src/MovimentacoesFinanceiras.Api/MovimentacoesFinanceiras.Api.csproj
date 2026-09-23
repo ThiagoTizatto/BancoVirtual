@@ -1,22 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="11.*" />
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.*" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.*" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.*" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentValidation" Version="11.*" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.*" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Serilog.AspNetCore" Version="9.*" />
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.*" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MovimentacoesFinanceiras.Aplicacao\MovimentacoesFinanceiras.Aplicacao.csproj" />
-    <ProjectReference Include="..\MovimentacoesFinanceiras.Infraestrutura\MovimentacoesFinanceiras.Infraestrutura.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\MovimentacoesFinanceiras.Aplicacao\MovimentacoesFinanceiras.Aplicacao.csproj" />
+        <ProjectReference Include="..\MovimentacoesFinanceiras.Infraestrutura\MovimentacoesFinanceiras.Infraestrutura.csproj" />
+    </ItemGroup>
 
 </Project>

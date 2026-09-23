@@ -8,6 +8,8 @@ public class ContaConfiguration : IEntityTypeConfiguration<Conta>
 {
     public void Configure(EntityTypeBuilder<Conta> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         builder.ToTable("contas");
         builder.HasKey(c => c.Id);
 

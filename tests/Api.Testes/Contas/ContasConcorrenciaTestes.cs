@@ -10,7 +10,7 @@ namespace Api.Testes.Contas;
 
 public class ContasConcorrenciaTestes(AplicacaoFactory fabrica) : IClassFixture<AplicacaoFactory>
 {
-    private async Task<Guid> CriarContaComSaldo(HttpClient cliente, decimal saldoInicial)
+    private static async Task<Guid> CriarContaComSaldo(HttpClient cliente, decimal saldoInicial)
     {
         var resposta = await cliente.PostAsJsonAsync("/contas", new { clienteId = Guid.NewGuid() });
         var json = await resposta.Content.ReadFromJsonAsync<JsonElement>();

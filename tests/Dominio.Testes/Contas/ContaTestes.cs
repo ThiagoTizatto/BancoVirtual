@@ -137,7 +137,7 @@ public class ContaTestes
 
         // Act & Assert
         acao.Should().Throw<SaldoInsuficienteException>()
-            .Which.ValorSolicitado.Quantia.Should().Be(100m);
+            .Which.ValorSolicitado!.Quantia.Should().Be(100m);
     }
 
     [Fact]

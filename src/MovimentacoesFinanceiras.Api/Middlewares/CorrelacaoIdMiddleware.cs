@@ -8,6 +8,8 @@ public class CorrelacaoIdMiddleware(RequestDelegate proximo)
 
     public async Task InvokeAsync(HttpContext contexto)
     {
+        ArgumentNullException.ThrowIfNull(contexto);
+
         var correlacaoId = contexto.Request.Headers[CabecalhoCorrelacaoId].FirstOrDefault()
             ?? Guid.NewGuid().ToString();
 

@@ -10,6 +10,8 @@ public class TratadorDeExcecoesMiddleware(RequestDelegate proximo, ILogger<Trata
 
     public async Task InvokeAsync(HttpContext contexto)
     {
+        ArgumentNullException.ThrowIfNull(contexto);
+
         try
         {
             await proximo(contexto);

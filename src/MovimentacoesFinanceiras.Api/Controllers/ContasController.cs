@@ -20,6 +20,8 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
         [FromBody] CriarContaRequest request,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var conta = Conta.Criar(request.ClienteId);
         await contexto.Contas.AddAsync(conta, cancellationToken);
         await contexto.SaveChangesAsync(cancellationToken);
@@ -47,6 +49,8 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
         [FromHeader(Name = "Idempotency-Key")] string? chaveIdempotencia,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var command = new RegistrarMovimentacaoCommand(id, request.Tipo, request.Valor, request.Descricao, chaveIdempotencia);
         var response = await mediador.Send(command, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, response);

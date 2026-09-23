@@ -9,8 +9,10 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(next);
+
         if (!validadores.Any())
-            return await next();
+            return await next(cancellationToken);
 
         var contexto = new ValidationContext<TRequest>(request);
         var erros = validadores
@@ -22,6 +24,6 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
         if (erros.Count > 0)
             throw new ValidationException(erros);
 
-        return await next();
+        return await next(cancellationToken);
     }
 }

@@ -8,6 +8,8 @@ public class LancamentoConfiguration : IEntityTypeConfiguration<Lancamento>
 {
     public void Configure(EntityTypeBuilder<Lancamento> builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+
         builder.ToTable("lancamentos");
         builder.HasKey(l => l.Id);
 

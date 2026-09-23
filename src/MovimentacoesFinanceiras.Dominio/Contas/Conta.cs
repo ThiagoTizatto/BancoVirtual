@@ -25,6 +25,7 @@ public sealed class Conta
 
     public Lancamento Creditar(Dinheiro valor, string? descricao, string? chaveIdempotencia = null)
     {
+        ArgumentNullException.ThrowIfNull(valor);
         SaldoAtual += valor.Quantia;
         VersaoLinha = Guid.NewGuid();
         var lancamento = Lancamento.CriarCredito(Id, valor.Quantia, descricao, chaveIdempotencia);
@@ -34,6 +35,7 @@ public sealed class Conta
 
     public Lancamento Debitar(Dinheiro valor, string? descricao, string? chaveIdempotencia = null)
     {
+        ArgumentNullException.ThrowIfNull(valor);
         if (valor.Quantia > SaldoAtual)
             throw new Excecoes.SaldoInsuficienteException(SaldoAtual, valor);
         SaldoAtual -= valor.Quantia;

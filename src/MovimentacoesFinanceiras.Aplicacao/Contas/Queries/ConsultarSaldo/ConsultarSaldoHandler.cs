@@ -9,6 +9,8 @@ public class ConsultarSaldoHandler(IContaRepository repositorio)
 {
     public async Task<SaldoResponse> Handle(ConsultarSaldoQuery request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var conta = await repositorio.ObterPorIdAsync(request.ContaId, cancellationToken)
             ?? throw new ContaNaoEncontradaException(request.ContaId);
 

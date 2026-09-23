@@ -69,6 +69,6 @@ app.UseMiddleware<MovimentacoesFinanceiras.Api.Middlewares.TratadorDeExcecoesMid
 app.MapControllers();
 app.MapHealthChecks("/saude");
 
-app.Run();
+await app.RunAsync();
 
 public partial class Program { }

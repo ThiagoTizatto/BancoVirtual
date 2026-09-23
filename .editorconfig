@@ -1,0 +1,45 @@
+root = true
+
+[*.cs]
+# CA1707: Remover sublinhados de nomes de membros.
+# Desabilitado porque a convenção xUnit de nomes de teste usa o padrão
+# Metodo_Cenario_Resultado, amplamente adotada na comunidade .NET.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA2007: Considere chamar ConfigureAwait na tarefa esperada.
+# Esta regra é recomendada para bibliotecas reutilizáveis onde o contexto de
+# sincronização é desconhecido. Em aplicações ASP.NET Core (app, não lib)
+# o runtime gerencia o contexto; ConfigureAwait(false) é desnecessário e
+# adiciona ruído sem benefício. Desabilitado para manter legibilidade.
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1515: Tornar tipos internos ao assembly.
+# Desabilitado porque Program.cs declara 'public partial class Program'
+# propositalmente — exigido por WebApplicationFactory<Program> nos testes de
+# integração. Tornar o tipo internal quebraria a suíte de testes.
+dotnet_diagnostic.CA1515.severity = none
+
+# CA1848: Usar delegates LoggerMessage para melhorar performance de logging.
+# Otimização válida para hot-paths de alta frequência; no TratadorDeExcecoesMiddleware
+# o log de erros não tratados é um caminho excepcional (erro 500). A verbosidade
+# do padrão LoggerMessage não justifica a troca fora de um sprint de performance.
+dotnet_diagnostic.CA1848.severity = none
+
+# CA1031: Capturar tipo de exceção mais específico.
+# O TratadorDeExcecoesMiddleware é o handler de último recurso da aplicação e
+# DEVE capturar Exception base para garantir que qualquer erro inesperado
+# retorne 500 com corpo RFC-7807 em vez de quebrar a pipeline do ASP.NET Core.
+dotnet_diagnostic.CA1031.severity = none
+
+# CA2234: Usar Uri em vez de string em HttpClient.
+# Em testes de integração com WebApplicationFactory, URIs relativas como
+# "/contas/..." são o padrão idiomático suportado pelo TestServer. Passar
+# um Uri absoluto neste contexto é incompatível com a base address do factory.
+dotnet_diagnostic.CA2234.severity = none
+
+# CA2025: Tarefas que usam IDisposable concluídas antes de descarte.
+# Falso positivo nos testes de concorrência: o IEnumerable<Task<HttpResponseMessage>>
+# é materializado via Select e imediatamente consumido por Task.WhenAll,
+# que aguarda todas as tarefas antes de retornar. O analyzer não rastreia
+# o fluxo de ownership das respostas, mas a lógica está correta.
+dotnet_diagnostic.CA2025.severity = none

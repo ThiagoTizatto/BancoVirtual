@@ -17,6 +17,8 @@ public class RegistrarMovimentacaoHandler(IContaRepository repositorio, IService
 
     public async Task<LancamentoResponse> Handle(RegistrarMovimentacaoCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         // Verifica idempotência antes de qualquer operação de escrita
         if (request.ChaveIdempotencia is not null)
         {

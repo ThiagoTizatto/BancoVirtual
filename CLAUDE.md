@@ -7,7 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 dotnet build
 dotnet test                                              # suíte completa (domínio + API)
+
+# Rodar a API localmente (requer PostgreSQL — suba via docker compose up postgres -d)
 dotnet run --project src/MovimentacoesFinanceiras.Api   # sobe em http://localhost:5095 (Swagger na raiz)
+
+# Via Docker (recomendado — sobe API + PostgreSQL juntos)
+docker compose up --build
 
 # Rodar um projeto de teste isolado
 dotnet test tests/Dominio.Testes
@@ -18,7 +23,7 @@ dotnet test --filter "FullyQualifiedName~ContaTestes"
 dotnet test --filter "DisplayName~Debitar"
 ```
 
-O banco SQLite (`movimentacoes.db`) é criado automaticamente via `EnsureCreatedAsync` no startup — **não há migrations**. Alterações no modelo EF são refletidas apagando o `.db` e reiniciando (ou recriando o banco de teste, que usa arquivo temporário por instância de `AplicacaoFactory`).
+O banco é **PostgreSQL**. O schema é gerenciado por **migrations EF Core** aplicadas automaticamente no startup via `MigrateAsync` (exceto no ambiente `"Testing"`). Para desenvolvimento local, suba o banco com `docker compose up postgres -d` e rode a API normalmente. Nos testes de integração, o banco é provisionado via **Testcontainers** — um contêiner PostgreSQL efêmero por suíte.
 
 Target framework: **.NET 10**.
 
@@ -28,7 +33,7 @@ Clean Architecture + DDD + CQRS. Dependências apontam sempre para dentro: `Api 
 
 - **Dominio** — `Conta` (raiz de agregado, construtor privado + factory `Criar`), `Lancamento` (entidade), `Dinheiro` (VO), `TipoLancamento` (enum). Regras de negócio vivem aqui: `Conta.Debitar` lança `SaldoInsuficienteException`, nunca deixa saldo negativo. Sem dependências externas.
 - **Aplicacao** — CQRS via MediatR. Commands em `Contas/Commands/`, Queries em `Contas/Queries/`. `ValidationBehavior` (pipeline MediatR) roda os validators FluentValidation antes de cada handler.
-- **Infraestrutura** — EF Core + SQLite. `BancoDadosContext`, `ContaRepository` (implementa `IContaRepository` do domínio), configurations aplicadas via `ApplyConfigurationsFromAssembly`.
+- **Infraestrutura** — EF Core + PostgreSQL (Npgsql). `BancoDadosContext`, `ContaRepository` (implementa `IContaRepository` do domínio), configurations aplicadas via `ApplyConfigurationsFromAssembly`.
 - **Api** — Controllers, middlewares, Serilog (JSON no console), Swagger.
 
 ### Padrões centrais (leia antes de mexer em escrita/saldo)
@@ -37,7 +42,7 @@ Clean Architecture + DDD + CQRS. Dependências apontam sempre para dentro: `Api 
 
 - **Concorrência otimista**: `Conta.VersaoLinha` é um `Guid` marcado `IsConcurrencyToken()` e regenerado a cada `Creditar`/`Debitar`. `RegistrarMovimentacaoHandler` envolve a escrita numa **política Polly** (3 retries com backoff exponencial) que captura `DbUpdateConcurrencyException`. **Cada tentativa cria um novo escopo de DI** (`IServiceScopeFactory` → novo `DbContext`), porque um `DbContext` fica poluído após uma exceção de concorrência e não pode ser reusado.
 
-- **Idempotência**: header HTTP `Idempotency-Key` → `Lancamento.ChaveIdempotencia`, com índice único no banco. O handler verifica a chave **antes** de qualquer escrita e retorna o lançamento existente se já processado. SQLite trata múltiplos NULLs como distintos, então o índice único não bloqueia lançamentos sem chave.
+- **Idempotência**: header HTTP `Idempotency-Key` → `Lancamento.ChaveIdempotencia`, com índice único no banco. O handler verifica a chave **antes** de qualquer escrita e retorna o lançamento existente se já processado.
 
 - **Tracking de `Lancamento`**: o handler chama `AdicionarLancamentoAsync` explicitamente em vez de confiar no tracking pela coleção de navegação — o backing field `_lancamentos` não é rastreado corretamente quando a `Conta` é carregada sem `Include`.
 
@@ -46,7 +51,7 @@ Clean Architecture + DDD + CQRS. Dependências apontam sempre para dentro: `Api 
 ### Testes
 
 - `Dominio.Testes` — unitários puros do agregado e VOs.
-- `Api.Testes` — integração via `WebApplicationFactory<Program>` (`AplicacaoFactory`), ambiente `"Testing"` (que desativa o `EnsureCreatedAsync` do `Program.cs` e usa SQLite em arquivo temporário). Inclui testes de concorrência que disparam movimentações em paralelo. `Program.cs` expõe `public partial class Program {}` justamente para essa factory.
+- `Api.Testes` — integração via `WebApplicationFactory<Program>` (`AplicacaoFactory`), ambiente `"Testing"` (que desativa o `MigrateAsync` do `Program.cs` e usa PostgreSQL via Testcontainers). Inclui testes de concorrência que disparam movimentações em paralelo. `Program.cs` expõe `public partial class Program {}` justamente para essa factory.
 
 ## Convenções (deste repositório)
 

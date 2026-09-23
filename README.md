@@ -4,21 +4,22 @@ Sistema bancário para registro de movimentações financeiras (créditos e déb
 
 ## Como rodar
 
-### Pré-requisitos
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-### Executar a aplicação
+### Via Docker (recomendado)
 
 ```bash
-git clone <url-do-repositorio>
-cd desafio-banco
-dotnet run --project src/MovimentacoesFinanceiras.Api
+docker compose up --build
 ```
 
-A API sobe em `http://localhost:5095`. O Swagger está disponível na raiz: `http://localhost:5095`.
+A API sobe em `http://localhost:8080` (Swagger na raiz) e o PostgreSQL sobe automaticamente. As migrations são aplicadas no startup.
 
-O banco SQLite (`movimentacoes.db`) é criado automaticamente na primeira execução — não há passo de migração manual.
+### Local (requer PostgreSQL)
+
+Suba apenas o banco e rode a API localmente:
+
+```bash
+docker compose up postgres -d
+dotnet run --project src/MovimentacoesFinanceiras.Api
+```
 
 ### Executar os testes
 
@@ -35,7 +36,7 @@ Suíte atual: **31 testes** (18 de domínio + 13 de API, cobrindo integração e
 ### Criar uma conta
 
 ```bash
-curl -X POST http://localhost:5095/contas \
+curl -X POST http://localhost:8080/contas \
   -H "Content-Type: application/json" \
   -d '{"clienteId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}'
 ```
@@ -43,7 +44,7 @@ curl -X POST http://localhost:5095/contas \
 ### Registrar um crédito
 
 ```bash
-curl -X POST http://localhost:5095/contas/{id}/movimentacoes \
+curl -X POST http://localhost:8080/contas/{id}/movimentacoes \
   -H "Content-Type: application/json" \
   -d '{"tipo": "Credito", "valor": 100.00, "descricao": "Depósito inicial"}'
 ```
@@ -53,7 +54,7 @@ curl -X POST http://localhost:5095/contas/{id}/movimentacoes \
 O cabeçalho `Idempotency-Key` garante que retries do cliente não gerem lançamentos duplicados.
 
 ```bash
-curl -X POST http://localhost:5095/contas/{id}/movimentacoes \
+curl -X POST http://localhost:8080/contas/{id}/movimentacoes \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: 8f3a1c2e-..." \
   -d '{"tipo": "Debito", "valor": 30.00, "descricao": "Saque"}'
@@ -62,25 +63,25 @@ curl -X POST http://localhost:5095/contas/{id}/movimentacoes \
 ### Consultar saldo atual
 
 ```bash
-curl http://localhost:5095/contas/{id}/saldo
+curl http://localhost:8080/contas/{id}/saldo
 ```
 
 ### Consultar saldo em ponto no tempo
 
 ```bash
-curl "http://localhost:5095/contas/{id}/saldo?em=2025-01-15T12:00:00Z"
+curl "http://localhost:8080/contas/{id}/saldo?em=2025-01-15T12:00:00Z"
 ```
 
 ### Listar extrato paginado
 
 ```bash
-curl "http://localhost:5095/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20"
+curl "http://localhost:8080/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20"
 ```
 
 ### Health check
 
 ```bash
-curl http://localhost:5095/saude
+curl http://localhost:8080/saude
 ```
 
 ---
@@ -96,7 +97,7 @@ A solução usa **CQRS + Ledger append-only** dentro de uma **Clean Architecture
 ```
 Dominio         → agregado Conta, Lancamento, Dinheiro (VO), regras de negócio puras
 Aplicacao       → CQRS via MediatR, validação (FluentValidation), retry (Polly)
-Infraestrutura  → EF Core + SQLite, ContaRepositorio
+Infraestrutura  → EF Core + PostgreSQL, ContaRepositorio
 Api             → ASP.NET Core, controladores, middlewares, Serilog, Swagger
 ```
 
@@ -111,7 +112,7 @@ O fluxo de dependências aponta sempre para dentro (`Api → Aplicacao → Domin
 | Concorrência otimista + Polly retry | Sem bloqueio de leituras; conflitos de versão absorvidos internamente |
 | Idempotência via `Idempotency-Key` | Retries do cliente nunca geram lançamentos duplicados |
 | Snapshot `saldo_atual` + ledger | Consulta de saldo atual em O(1); ledger garante consistência e auditoria |
-| SQLite | Zero dependências externas para rodar localmente |
+| PostgreSQL | Banco relacional robusto com suporte a concorrência otimista e índices únicos |
 
 ### O que ficou de fora (e por quê)
 

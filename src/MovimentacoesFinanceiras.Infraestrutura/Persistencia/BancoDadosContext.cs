@@ -3,7 +3,7 @@ using MovimentacoesFinanceiras.Dominio.Contas;
 
 namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
-public class BancoDadosContext : DbContext
+internal class BancoDadosContext : DbContext
 {
     public BancoDadosContext(DbContextOptions<BancoDadosContext> options) : base(options) { }
 

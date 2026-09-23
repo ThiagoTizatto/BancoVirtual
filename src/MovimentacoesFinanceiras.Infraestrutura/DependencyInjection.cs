@@ -25,4 +25,12 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    public static async Task AplicarMigracoesAsync(this IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        using var escopo = serviceProvider.CreateScope();
+        var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
+        await contexto.Database.MigrateAsync(cancellationToken);
+    }
 }

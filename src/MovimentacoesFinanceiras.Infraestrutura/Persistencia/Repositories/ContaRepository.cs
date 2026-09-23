@@ -4,7 +4,7 @@ using MovimentacoesFinanceiras.Dominio.Contas.Excecoes;
 
 namespace MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
 
-public class ContaRepository(BancoDadosContext contexto) : IContaRepository
+internal sealed class ContaRepository(BancoDadosContext contexto) : IContaRepository
 {
     private readonly BancoDadosContext _contexto = contexto;
 

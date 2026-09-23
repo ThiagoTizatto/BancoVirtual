@@ -1,9 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using MovimentacoesFinanceiras.Api;
 using MovimentacoesFinanceiras.Aplicacao;
 using MovimentacoesFinanceiras.Dominio;
 using MovimentacoesFinanceiras.Infraestrutura;
-using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,9 +23,7 @@ var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
-    using var escopo = app.Services.CreateScope();
-    var contexto = escopo.ServiceProvider.GetRequiredService<BancoDadosContext>();
-    await contexto.Database.MigrateAsync();
+    await app.Services.AplicarMigracoesAsync();
 }
 
 app.UseSwagger();

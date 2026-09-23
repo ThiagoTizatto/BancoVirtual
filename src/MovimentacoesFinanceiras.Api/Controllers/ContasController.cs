@@ -1,40 +1,30 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.CriarConta;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ConsultarSaldo;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ConsultarSaldoEm;
+using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ListarMovimentacoes;
 using MovimentacoesFinanceiras.Dominio.Contas;
-using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 
 namespace MovimentacoesFinanceiras.Api.Controllers;
 
 [ApiController]
 [Route("contas")]
 [Produces("application/json")]
-public class ContasController(IMediator mediador, BancoDadosContext contexto, IContaRepository repositorio) : ControllerBase
+public class ContasController(IMediator mediador) : ControllerBase
 {
     /// <summary>Cria uma nova conta para um cliente.</summary>
     [HttpPost]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ContaResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CriarConta(
         [FromBody] CriarContaRequest request,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var conta = Conta.Criar(request.ClienteId);
-        await contexto.Contas.AddAsync(conta, cancellationToken);
-        await contexto.SaveChangesAsync(cancellationToken);
-
-        var response = new
-        {
-            id = conta.Id,
-            clienteId = conta.ClienteId,
-            saldoAtual = conta.SaldoAtual.Quantia,
-            criadoEm = conta.CriadoEm
-        };
-
-        return CreatedAtAction(nameof(ConsultarSaldo), new { id = conta.Id }, response);
+        var response = await mediador.Send(new CriarContaCommand(request.ClienteId), cancellationToken);
+        return CreatedAtAction(nameof(ConsultarSaldo), new { id = response.Id }, response);
     }
 
     /// <summary>Registra uma movimentação financeira (crédito ou débito).</summary>
@@ -57,9 +47,7 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
     }
 
     /// <summary>
-    /// Consulta o saldo da conta.
-    /// Sem o parâmetro 'em': retorna o saldo atual (O(1)).
-    /// Com o parâmetro 'em': retorna o saldo no ponto no tempo informado.
+    /// Consulta o saldo da conta. Sem 'em': saldo atual (O(1)). Com 'em': saldo point-in-time.
     /// </summary>
     [HttpGet("{id:guid}/saldo")]
     [ProducesResponseType(typeof(SaldoResponse), StatusCodes.Status200OK)]
@@ -76,13 +64,12 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
             return Ok(await mediador.Send(queryHistorico, cancellationToken));
         }
 
-        var query = new ConsultarSaldoQuery(id);
-        return Ok(await mediador.Send(query, cancellationToken));
+        return Ok(await mediador.Send(new ConsultarSaldoQuery(id), cancellationToken));
     }
 
     /// <summary>Lista o extrato paginado da conta.</summary>
     [HttpGet("{id:guid}/movimentacoes")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ExtratoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListarMovimentacoes(
         Guid id,
@@ -90,25 +77,8 @@ public class ContasController(IMediator mediador, BancoDadosContext contexto, IC
         [FromQuery] int tamanhoPagina = 20,
         CancellationToken cancellationToken = default)
     {
-        var conta = await contexto.Contas.FindAsync([id], cancellationToken);
-        if (conta is null) return NotFound();
-
-        var (itens, total) = await repositorio.ListarLancamentosAsync(id, pagina, tamanhoPagina, cancellationToken);
-
-        return Ok(new
-        {
-            itens = itens.Select(l => new
-            {
-                id = l.Id,
-                tipo = l.Tipo.ToString(),
-                valor = l.Valor,
-                descricao = l.Descricao,
-                criadoEm = l.CriadoEm
-            }),
-            pagina,
-            tamanhoPagina,
-            total
-        });
+        var query = new ListarMovimentacoesQuery(id, pagina, tamanhoPagina);
+        return Ok(await mediador.Send(query, cancellationToken));
     }
 }
 

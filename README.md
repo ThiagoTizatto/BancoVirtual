@@ -119,6 +119,34 @@ curl "http://localhost:8080/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20"
 curl http://localhost:8080/saude
 ```
 
+### Rate limiting
+
+Cada API Key tem uma janela fixa de **100 requisições / 10 segundos**. Excedido o limite, a API retorna `429 Too Many Requests`.
+
+### Observabilidade
+
+| Endpoint | Descrição |
+|---|---|
+| `/metrics` | Métricas no formato Prometheus (`movimentacoes_total`, `http.server.request.duration`) |
+| `/saude` | Health check do banco de dados (sem autenticação) |
+
+Exemplo de scraping:
+```bash
+curl http://localhost:8080/metrics
+```
+
+### Load test (execução sob demanda)
+
+Com a API no ar (`docker compose up`):
+
+```bash
+CARGA_BASE_URL=http://localhost:8080 \
+CARGA_API_KEY=dev-key-local-somente \
+dotnet run --project tests/Carga.Testes -c Release
+```
+
+NBomber injeta 100 requisições/s por 30 s e gera relatório com throughput e latências p95/p99.
+
 ---
 
 ## Arquitetura
@@ -133,7 +161,7 @@ A solução usa **CQRS + Ledger append-only** dentro de uma **Clean Architecture
 Dominio         → agregado Conta, Lancamento, Dinheiro (VO), regras de negócio puras
 Aplicacao       → CQRS via MediatR, validação (FluentValidation), retry (Polly)
 Infraestrutura  → EF Core + PostgreSQL, ContaRepositorio
-Api             → ASP.NET Core, controladores, middlewares, Serilog, Swagger
+Api             → ASP.NET Core, controladores, middlewares, Serilog, Swagger, autenticação API Key, rate limiting, OpenTelemetry/Prometheus
 ```
 
 O fluxo de dependências aponta sempre para dentro (`Api → Aplicacao → Dominio`); o domínio não conhece nenhuma dependência externa.
@@ -144,10 +172,12 @@ O fluxo de dependências aponta sempre para dentro (`Api → Aplicacao → Domin
 |---|---|
 | Ledger append-only | Rastreabilidade imutável; saldo histórico via soma dos lançamentos sem mecanismo extra |
 | CQRS | Leitura e escrita com modelos e caminhos independentes |
-| Concorrência otimista + Polly retry | Sem bloqueio de leituras; conflitos de versão absorvidos internamente |
+| UPDATE atômico + Polly PolicyWrap | UPDATE SQL atômico evita race conditions sem bloqueio; Polly combina retry de concorrência com circuit breaker de conectividade |
 | Idempotência via `Idempotency-Key` | Retries do cliente nunca geram lançamentos duplicados |
 | Snapshot `saldo_atual` + ledger | Consulta de saldo atual em O(1); ledger garante consistência e auditoria |
-| PostgreSQL | Banco relacional robusto com suporte a concorrência otimista e índices únicos |
+| PostgreSQL | Banco relacional robusto com transações ACID e índices únicos |
+| API Key + rate limiting | Autenticação simples e proteção contra abuso (100 req/10 s por chave) |
+| OpenTelemetry/Prometheus | Métricas instrumentadas em `/metrics`; pronto para Grafana/alertas |
 
 ### O que ficou de fora (e por quê)
 

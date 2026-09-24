@@ -26,7 +26,12 @@ public class RegistrarMovimentacaoHandler(
 
         var lancamento = await PoliticasResiliencia.Combinada.ExecuteAsync(
             () => repositorio.RegistrarMovimentacaoAsync(
-                request.ContaId, request.Tipo, dinheiro, request.Descricao, request.ChaveIdempotencia, cancellationToken));
+                request.ContaId, 
+                request.Tipo,
+                dinheiro, 
+                request.Descricao,
+                request.ChaveIdempotencia, 
+                cancellationToken));
 
         metricas.RegistrarMovimentacao(request.Tipo.ToString());
 

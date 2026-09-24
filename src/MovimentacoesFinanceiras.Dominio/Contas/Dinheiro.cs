@@ -19,7 +19,6 @@ public sealed class Dinheiro : IEquatable<Dinheiro>, IComparable<Dinheiro>
 
     internal static Dinheiro Reconstituir(decimal quantia) => new(quantia);
 
-    // Friendly names exigidos por CA2225 para os operadores + e -
     public Dinheiro Add(Dinheiro outro)
     {
         ArgumentNullException.ThrowIfNull(outro);
@@ -31,52 +30,42 @@ public sealed class Dinheiro : IEquatable<Dinheiro>, IComparable<Dinheiro>
         ArgumentNullException.ThrowIfNull(outro);
         return new Dinheiro(Quantia - outro.Quantia);
     }
-
-    // Aliases em portugues para manter a linguagem ubiqua do dominio
     public Dinheiro Somar(Dinheiro outro) => Add(outro);
-
     public Dinheiro Subtrair(Dinheiro outro) => Subtract(outro);
-
     public static Dinheiro operator +(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         return left.Add(right);
     }
-
     public static Dinheiro operator -(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         return left.Subtract(right);
     }
-
     public static bool operator >(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
         return left.Quantia > right.Quantia;
     }
-
     public static bool operator <(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
         return left.Quantia < right.Quantia;
     }
-
     public static bool operator >=(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
         return left.Quantia >= right.Quantia;
     }
-
     public static bool operator <=(Dinheiro left, Dinheiro right)
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
         return left.Quantia <= right.Quantia;
     }
-
     public int CompareTo(Dinheiro? other) => other is null ? 1 : Quantia.CompareTo(other.Quantia);
 
     public bool Equals(Dinheiro? other) => other is not null && Quantia == other.Quantia;
@@ -86,6 +75,5 @@ public sealed class Dinheiro : IEquatable<Dinheiro>, IComparable<Dinheiro>
 
     public static bool operator ==(Dinheiro? left, Dinheiro? right) =>
         left is null ? right is null : left.Equals(right);
-
     public static bool operator !=(Dinheiro? left, Dinheiro? right) => !(left == right);
 }

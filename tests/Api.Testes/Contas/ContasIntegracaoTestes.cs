@@ -164,7 +164,7 @@ public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<Ap
     public async Task GetSaude_DeveRetornar200()
     {
         // Act
-        var resposta = await _cliente.GetAsync("/saude");
+        var resposta = await _cliente.GetAsync("/health");
 
         // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);

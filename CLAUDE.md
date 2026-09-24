@@ -44,7 +44,7 @@ Clean Architecture + DDD + CQRS. Dependências apontam sempre para dentro: `Api 
 
 - **Idempotência**: header HTTP `Idempotency-Key` → `Lancamento.ChaveIdempotencia`, com índice único no banco. O handler verifica a chave **antes** de qualquer escrita e retorna o lançamento existente se já processado.
 
-- **Autenticação**: `ApiKeyAuthenticationHandler` valida o header `X-Api-Key` contra a lista `ApiKeys` (configurada via user-secrets ou env vars). Todos os endpoints em `ContasController` requerem `[Authorize]`. `/saude` e `/metrics` são anônimos. A lambda em `AddScheme` é lazy — lê `ApiKeys` somente na primeira requisição, após `Build()`, garantindo que `WebApplicationFactory.ConfigureAppConfiguration` já tenha injetado as chaves de teste.
+- **Autenticação**: `ApiKeyAuthenticationHandler` valida o header `X-Api-Key` contra a lista `ApiKeys` (configurada via user-secrets ou env vars). Todos os endpoints em `ContasController` requerem `[Authorize]`. `/health` e `/metrics` são anônimos. A lambda em `AddScheme` é lazy — lê `ApiKeys` somente na primeira requisição, após `Build()`, garantindo que `WebApplicationFactory.ConfigureAppConfiguration` já tenha injetado as chaves de teste.
 
 - **Rate limiting**: `[EnableRateLimiting("por-api-key")]` no controller. Partição por header `X-Api-Key` (fallback: IP). 100 req/10 s, sem fila (`QueueLimit = 0`). Rejeição retorna 429.
 

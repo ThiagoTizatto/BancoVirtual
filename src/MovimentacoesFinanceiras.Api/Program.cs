@@ -47,7 +47,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();
-app.MapHealthChecks("/saude");
+app.MapHealthChecks("/health");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
 await app.RunAsync();

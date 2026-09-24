@@ -33,7 +33,7 @@ Suíte atual: **37 testes** (23 de domínio + 14 de API, cobrindo integração, 
 
 ## Configuração e segredos
 
-Todas as chamadas à API (exceto `/saude`) requerem o header `X-Api-Key`.
+Todas as chamadas à API (exceto `/health`) requerem o header `X-Api-Key`.
 
 ### Desenvolvimento local
 
@@ -116,7 +116,7 @@ curl "http://localhost:8080/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20"
 ### Health check (sem autenticação)
 
 ```bash
-curl http://localhost:8080/saude
+curl http://localhost:8080/health
 ```
 
 ### Rate limiting
@@ -128,7 +128,7 @@ Cada API Key tem uma janela fixa de **100 requisições / 10 segundos**. Excedid
 | Endpoint | Descrição |
 |---|---|
 | `/metrics` | Métricas no formato Prometheus (`movimentacoes_total`, `http.server.request.duration`) |
-| `/saude` | Health check do banco de dados (sem autenticação) |
+| `/health` | Health check do banco de dados (sem autenticação) |
 
 Exemplo de scraping:
 ```bash

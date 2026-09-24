@@ -7,7 +7,7 @@ namespace Api.Testes.Contas;
 
 public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<AplicacaoFactory>
 {
-    private readonly HttpClient _cliente = fabrica.CreateClient();
+    private readonly HttpClient _cliente = fabrica.CriarClienteAutenticado();
 
     private async Task<Guid> CriarContaAsync()
     {
@@ -145,7 +145,7 @@ public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<Ap
     public async Task PostMovimentacoes_ComMesmaChaveIdempotencia_NaoDeveDuplicarLancamento()
     {
         // Arrange
-        var clienteLocal = fabrica.CreateClient();
+        var clienteLocal = fabrica.CriarClienteAutenticado();
         var contaId = await CriarContaAsync();
         var chave = Guid.NewGuid().ToString();
         clienteLocal.DefaultRequestHeaders.Add("Idempotency-Key", chave);
@@ -168,5 +168,18 @@ public class ContasIntegracaoTestes(AplicacaoFactory fabrica) : IClassFixture<Ap
 
         // Assert
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task RequisicaoSemApiKey_Retorna401()
+    {
+        // Arrange
+        var clienteSemChave = fabrica.CreateClient();
+
+        // Act
+        var resposta = await clienteSemChave.PostAsJsonAsync("/contas", new { clienteId = Guid.NewGuid() });
+
+        // Assert
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

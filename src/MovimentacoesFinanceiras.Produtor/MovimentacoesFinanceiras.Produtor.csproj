@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <ItemGroup>
+        <PackageReference Include="RabbitMQ.Client" Version="$(RabbitMqClientVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MovimentacoesFinanceiras.Mensagens\MovimentacoesFinanceiras.Mensagens.csproj" />
+    </ItemGroup>
+
+</Project>

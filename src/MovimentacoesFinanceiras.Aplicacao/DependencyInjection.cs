@@ -18,6 +18,8 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
+        services.AddSingleton<MovimentacoesFinanceiras.Aplicacao.Metricas.MetricasMovimentacao>();
+
         return services;
     }
 }

@@ -16,6 +16,9 @@ builder.Services.AddSwaggerGen(opcoes => opcoes.SwaggerDoc("v1", new()
 
 var app = builder.Build();
 
+var topologia = app.Services.GetRequiredService<MovimentacoesFinanceiras.Produtor.RabbitMq.TopologiaDeclaratorProdutor>();
+await topologia.DeclararAsync();
+
 app.UseSwagger();
 app.UseSwaggerUI(opcoes =>
 {

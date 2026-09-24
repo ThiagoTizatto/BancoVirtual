@@ -20,7 +20,7 @@ public sealed partial class ProcessadorDeMovimentacao
 
     public async Task ProcessarAsync(byte[] corpo, CancellationToken ct)
     {
-        var mensagem = JsonSerializer.Deserialize<ComandoMovimentacaoMessage>(corpo)
+        var mensagem = JsonSerializer.Deserialize<ComandoMovimentacaoMessage>(corpo, MensagensSerializerOptions.Padrao)
             ?? throw new InvalidOperationException("Corpo da mensagem deserializou para null.");
 
         LogProcessando(mensagem.ContaId, mensagem.Tipo, mensagem.Valor);

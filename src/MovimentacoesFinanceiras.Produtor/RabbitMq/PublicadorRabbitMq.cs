@@ -18,11 +18,12 @@ public sealed class PublicadorRabbitMq : IPublicadorDeMovimentacoes
         ArgumentNullException.ThrowIfNull(mensagem);
         await using var canal = await _conexao.CriarCanalAsync(ct);
 
-        var body = JsonSerializer.SerializeToUtf8Bytes(mensagem);
+        var body = JsonSerializer.SerializeToUtf8Bytes(mensagem, MensagensSerializerOptions.Padrao);
 
         var props = new BasicProperties
         {
             Persistent = true,
+            ContentType = "application/json",
             MessageId = mensagem.ChaveIdempotencia,
         };
 

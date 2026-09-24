@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
 
         services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
         services.AddSingleton<IConexaoRabbitMq, ConexaoRabbitMq>();
+        services.AddSingleton<TopologiaDeclaratorProdutor>();
         services.AddScoped<IPublicadorDeMovimentacoes, PublicadorRabbitMq>();
 
         return services;

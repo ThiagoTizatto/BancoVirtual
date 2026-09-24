@@ -68,7 +68,7 @@ public class PublicadorRabbitMqTestes
 
     private static bool CorpoContemMensagem(ReadOnlyMemory<byte> corpo, ComandoMovimentacaoMessage esperado)
     {
-        var deserializado = JsonSerializer.Deserialize<ComandoMovimentacaoMessage>(corpo.Span);
+        var deserializado = JsonSerializer.Deserialize<ComandoMovimentacaoMessage>(corpo.Span, MensagensSerializerOptions.Padrao);
         return deserializado == esperado;
     }
 }

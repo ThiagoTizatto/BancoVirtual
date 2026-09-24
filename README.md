@@ -27,7 +27,36 @@ dotnet run --project src/MovimentacoesFinanceiras.Api
 dotnet test
 ```
 
-Suíte atual: **31 testes** (18 de domínio + 13 de API, cobrindo integração e concorrência).
+Suíte atual: **37 testes** (23 de domínio + 14 de API, cobrindo integração, concorrência e autenticação).
+
+---
+
+## Configuração e segredos
+
+Todas as chamadas à API (exceto `/saude`) requerem o header `X-Api-Key`.
+
+### Desenvolvimento local
+
+As chaves de API e a connection string são gerenciadas via **user-secrets** (nunca em `appsettings.json`):
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Postgres" "Host=localhost;Port=5432;Database=movimentacoes;Username=postgres;Password=postgres" \
+  --project src/MovimentacoesFinanceiras.Api
+
+dotnet user-secrets set "ApiKeys:0" "dev-key-local-somente" \
+  --project src/MovimentacoesFinanceiras.Api
+```
+
+O `appsettings.Development.json` já traz uma chave de conveniência para uso local (`dev-key-local-somente`).
+
+### Docker / produção
+
+Forneça via variáveis de ambiente:
+
+```
+ConnectionStrings__Postgres=Host=db;Port=5432;Database=movimentacoes;Username=postgres;Password=<senha>
+ApiKeys__0=<chave-de-producao>
+```
 
 ---
 
@@ -38,6 +67,7 @@ Suíte atual: **31 testes** (18 de domínio + 13 de API, cobrindo integração e
 ```bash
 curl -X POST http://localhost:8080/contas \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-key-local-somente" \
   -d '{"clienteId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}'
 ```
 
@@ -46,6 +76,7 @@ curl -X POST http://localhost:8080/contas \
 ```bash
 curl -X POST http://localhost:8080/contas/{id}/movimentacoes \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-key-local-somente" \
   -d '{"tipo": "Credito", "valor": 100.00, "descricao": "Depósito inicial"}'
 ```
 
@@ -56,6 +87,7 @@ O cabeçalho `Idempotency-Key` garante que retries do cliente não gerem lançam
 ```bash
 curl -X POST http://localhost:8080/contas/{id}/movimentacoes \
   -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-key-local-somente" \
   -H "Idempotency-Key: 8f3a1c2e-..." \
   -d '{"tipo": "Debito", "valor": 30.00, "descricao": "Saque"}'
 ```
@@ -63,22 +95,25 @@ curl -X POST http://localhost:8080/contas/{id}/movimentacoes \
 ### Consultar saldo atual
 
 ```bash
-curl http://localhost:8080/contas/{id}/saldo
+curl http://localhost:8080/contas/{id}/saldo \
+  -H "X-Api-Key: dev-key-local-somente"
 ```
 
 ### Consultar saldo em ponto no tempo
 
 ```bash
-curl "http://localhost:8080/contas/{id}/saldo?em=2025-01-15T12:00:00Z"
+curl "http://localhost:8080/contas/{id}/saldo?em=2025-01-15T12:00:00Z" \
+  -H "X-Api-Key: dev-key-local-somente"
 ```
 
 ### Listar extrato paginado
 
 ```bash
-curl "http://localhost:8080/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20"
+curl "http://localhost:8080/contas/{id}/movimentacoes?pagina=1&tamanhoPagina=20" \
+  -H "X-Api-Key: dev-key-local-somente"
 ```
 
-### Health check
+### Health check (sem autenticação)
 
 ```bash
 curl http://localhost:8080/saude
@@ -116,6 +151,5 @@ O fluxo de dependências aponta sempre para dentro (`Api → Aplicacao → Domin
 
 ### O que ficou de fora (e por quê)
 
-- **Autenticação JWT** — fora do escopo do desafio; ponto de extensão natural documentado
+- **Autenticação JWT / OAuth2** — API Key suficiente para o escopo do desafio; upgrade documentado como ponto de extensão
 - **Snapshot periódico de saldo histórico** — necessário para históricos de anos com alto volume; para o escopo, a soma do ledger resolve
-- **Circuit breaker** — relevante em produção; Polly já está no projeto como dependência

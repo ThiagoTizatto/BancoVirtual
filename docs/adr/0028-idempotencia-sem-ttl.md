@@ -3,6 +3,30 @@
 **Status:** Aceito
 **Data:** 2026-09-23
 
+## Fluxo de idempotência
+
+```mermaid
+flowchart TD
+    REQ["POST /contas/{id}/movimentacoes\nIdempotency-Key: abc-123"] --> CHK
+
+    CHK["SELECT * FROM lancamentos\nWHERE chave_idempotencia = 'abc-123'"]
+
+    CHK -->|encontrou| EXIST["Retorna lançamento existente\n201 — sem reprocessar"]
+    CHK -->|não encontrou| WRITE["Executa movimentação\n(UPDATE atômico + INSERT)\nchave_idempotencia gravada no lançamento"]
+
+    WRITE -->|sucesso| NEW[201 Created]
+    WRITE -->|UniqueConstraintException\nrace condition extremo| CHK
+
+    NOTE["Índice único em lancamentos.chave_idempotencia\nguarda a segunda linha de defesa caso\nduas requisições simultâneas passem pela\nverificação antes de qualquer escrever"]
+
+    style EXIST fill:#d4edda,color:#155724
+    style NEW   fill:#d4edda,color:#155724
+    style NOTE  fill:#fff3cd,color:#856404
+```
+
+> Sem TTL: a chave vive indefinidamente no ledger junto do lançamento.
+> Custo aceito no volume atual; tabela dedicada com expiração é a evolução documentada.
+
 ## Contexto
 
 A idempotência é garantida pela chave `Idempotency-Key` → `Lancamento.ChaveIdempotencia`,

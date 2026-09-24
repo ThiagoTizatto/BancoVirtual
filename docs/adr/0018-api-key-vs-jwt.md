@@ -4,6 +4,31 @@
 **Data:** 2026-09-23
 **Relacionado:** ADR-021
 
+## Fluxo do pipeline de autenticação e controle de acesso
+
+```mermaid
+flowchart TD
+    REQ[HTTP Request] --> ANON{"endpoint\nanônimo?"}
+
+    ANON -->|"/health, /metrics"| DIRECT[Responde diretamente\nsem autenticação]
+
+    ANON -->|"demais endpoints\n[Authorize]"| AUTH[ApiKeyAuthenticationHandler\nlê header X-Api-Key]
+
+    AUTH --> KEY{"chave presente\ne válida?"}
+    KEY -->|ausente ou inválida| U401["401 Unauthorized\napplication/problem+json"]
+
+    KEY -->|válida| RL["Rate Limiter — ADR-023\nparticionado por API Key\n100 req / 10 s"]
+    RL --> QUOTA{"dentro da\ncota?"}
+    QUOTA -->|excedeu| U429["429 Too Many Requests\napplication/problem+json"]
+
+    QUOTA -->|dentro| CTRL["ContasController\n[Authorize]"]
+    CTRL --> RESP["200 / 201 / 404 / 422\napplication/json\napplication/problem+json"]
+
+    style U401 fill:#f8d7da,color:#721c24
+    style U429 fill:#f8d7da,color:#721c24
+    style RESP fill:#d4edda,color:#155724
+```
+
 ## Contexto
 
 O desafio cobra explicitamente *"como proteger dados sensíveis dos clientes"*.

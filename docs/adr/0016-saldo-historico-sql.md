@@ -3,6 +3,33 @@
 **Status:** Aceito
 **Data:** 2026-09-23
 
+## Fluxo da consulta: antes vs depois
+
+```mermaid
+flowchart LR
+    REQ["GET /contas/{id}/saldo\n?em=2026-01-15"] --> H[ConsultarSaldoEmHandler]
+
+    subgraph ANTES["❌ Antes — O(n) linhas trafegadas"]
+        direction TB
+        A1["ToListAsync()\ncarrega TODOS os lançamentos\nda conta para a memória"]
+        A2[".Sum() em LINQ-to-objects\nno processo da API"]
+        A1 --> A2
+    end
+
+    subgraph DEPOIS["✅ Depois — um escalar"]
+        direction TB
+        D1["SQL:\nSUM(CASE WHEN tipo = 'Credito'\n     THEN valor ELSE -valor END)\nWHERE conta_id = @id\n  AND criado_em <= @data"]
+        D2["Índice composto\n(conta_id, criado_em)\nusado pelo plan do Postgres"]
+        D1 --> D2
+    end
+
+    H --> DEPOIS
+    DEPOIS --> R["decimal único\ntrafegado via rede"]
+
+    style ANTES  fill:#f8d7da,color:#721c24
+    style DEPOIS fill:#d4edda,color:#155724
+```
+
 ## Contexto
 
 `ConsultarSaldoEmAsync` trazia todos os lançamentos até a data de referência para a

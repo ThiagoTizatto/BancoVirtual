@@ -4,6 +4,39 @@
 **Data:** 2026-09-23
 **Refina:** ADR-002 (concorrência otimista), ADR-005 (retry Polly)
 
+## Fluxo do caminho de escrita
+
+```mermaid
+flowchart TD
+    POST["POST /contas/{id}/movimentacoes\nIdempotency-Key: uuid"] --> VAL[ValidationBehavior\nFluentValidation]
+    VAL -->|inválido| E400[400 Bad Request]
+    VAL -->|válido| WRAP[PolicyWrap — PoliticasResiliencia.Combinada]
+
+    WRAP -->|circuito aberto| FF[fail-fast — indisponibilidade]
+    WRAP --> IDEM{"chave_idempotencia\njá existe?"}
+    IDEM -->|sim| RET["Retorna lançamento existente\n(sem reprocessar)"]
+    IDEM -->|não| TX[BEGIN TRANSACTION]
+
+    TX --> TIP{Tipo?}
+
+    TIP -->|Crédito| UPC["UPDATE contas\nSET saldo_atual = saldo_atual + @valor\nWHERE id = @id"]
+    TIP -->|Débito|  UPD["UPDATE contas\nSET saldo_atual = saldo_atual - @valor\nWHERE id = @id\n  AND saldo_atual >= @valor"]
+
+    UPC -->|1 linha| INS
+    UPC -->|0 linhas| CNF[ContaNaoEncontradaException → 404]
+
+    UPD -->|1 linha| INS[INSERT lancamentos\ncom chave_idempotencia]
+    UPD -->|0 linhas| EXST{conta existe?}
+    EXST -->|não| CNF
+    EXST -->|sim| SIE[SaldoInsuficienteException → 422]
+
+    INS --> CMT[COMMIT]
+    CMT --> OK[201 Created]
+```
+
+> **Invariante central:** o `UPDATE` da coluna `saldo_atual` e o `INSERT` do `Lancamento`
+> ocorrem **na mesma transação**. Snapshot e ledger nunca ficam dessincronizados.
+
 ## Contexto
 
 Com SQLite, as escritas eram serializadas pelo WAL lock — os 3 retries do Polly

@@ -17,6 +17,8 @@
     <MediatRVersion>12.*</MediatRVersion>
     <NpgsqlVersion>9.*</NpgsqlVersion>
     <PollyVersion>8.*</PollyVersion>
+    <RabbitMqClientVersion>7.*</RabbitMqClientVersion>
+    <NSubstituteVersion>5.*</NSubstituteVersion>
 
     <!-- Serilog -->
     <SerilogAspNetCoreVersion>9.*</SerilogAspNetCoreVersion>

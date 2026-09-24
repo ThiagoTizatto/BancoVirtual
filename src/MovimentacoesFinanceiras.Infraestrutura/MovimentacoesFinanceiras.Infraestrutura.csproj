@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
         <ItemGroup>
+                <ProjectReference Include="..\MovimentacoesFinanceiras.Aplicacao\MovimentacoesFinanceiras.Aplicacao.csproj" />
                 <ProjectReference Include="..\MovimentacoesFinanceiras.Dominio\MovimentacoesFinanceiras.Dominio.csproj" />
+                <ProjectReference Include="..\MovimentacoesFinanceiras.Mensagens\MovimentacoesFinanceiras.Mensagens.csproj" />
         </ItemGroup>
 
         <ItemGroup>
                 <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(PlataformaVersion)" />
                 <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(PlataformaVersion)" />
+                <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(PlataformaVersion)" />
                 <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="$(PlataformaVersion)" />
                 <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(PlataformaVersion)" />
+                <PackageReference Include="RabbitMQ.Client" Version="$(RabbitMqClientVersion)" />
         </ItemGroup>
 
 </Project>

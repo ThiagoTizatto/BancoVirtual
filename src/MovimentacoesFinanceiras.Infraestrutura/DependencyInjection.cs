@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MovimentacoesFinanceiras.Dominio.Contas;
+using MovimentacoesFinanceiras.Infraestrutura.Contas.RabbitMq;
 using MovimentacoesFinanceiras.Infraestrutura.Persistencia;
 using MovimentacoesFinanceiras.Infraestrutura.Persistencia.Repositories;
+using MovimentacoesFinanceiras.Infraestrutura.RabbitMq;
 
 namespace MovimentacoesFinanceiras.Infraestrutura;
 
@@ -23,6 +25,17 @@ public static class ServiceCollectionExtensions
         services.AddHealthChecks()
             .AddDbContextCheck<BancoDadosContext>("banco-de-dados");
 
+        services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
+        services.AddSingleton<IConexaoRabbitMq, ConexaoRabbitMq>();
+        services.AddSingleton<TopologiaDeclarator>();
+        services.AddTransient<ProcessadorDeMovimentacao>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddRabbitMqConsumer(this IServiceCollection services)
+    {
+        services.AddHostedService<ConsumidorDeMovimentacoes>();
         return services;
     }
 

@@ -20,11 +20,17 @@ builder.Services
     .AddInfraestrutura(builder.Configuration)
     .AddApi(builder.Configuration);
 
+if (!builder.Environment.IsEnvironment("Testing"))
+    builder.Services.AddRabbitMqConsumer();
+
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
     await app.Services.AplicarMigracoesAsync();
+
+    var topologia = app.Services.GetRequiredService<MovimentacoesFinanceiras.Infraestrutura.RabbitMq.TopologiaDeclarator>();
+    await topologia.DeclararAsync();
 }
 
 if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))

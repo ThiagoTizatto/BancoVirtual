@@ -15,16 +15,45 @@ services:
       timeout: 3s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
       dockerfile: src/MovimentacoesFinanceiras.Api/Dockerfile
     environment:
       ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=movimentacoes;Username=postgres;Password=postgres"
+      RabbitMq__Host: rabbitmq
     ports:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  produtor:
+    build:
+      context: .
+      dockerfile: src/MovimentacoesFinanceiras.Produtor/Dockerfile
+    environment:
+      RabbitMq__Host: rabbitmq
+    ports:
+      - "8081:8081"
+    depends_on:
+      rabbitmq:
         condition: service_healthy
 
 volumes:

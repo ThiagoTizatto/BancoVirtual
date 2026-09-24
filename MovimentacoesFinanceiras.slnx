@@ -4,9 +4,14 @@
     <Project Path="src/MovimentacoesFinanceiras.Aplicacao/MovimentacoesFinanceiras.Aplicacao.csproj" />
     <Project Path="src/MovimentacoesFinanceiras.Dominio/MovimentacoesFinanceiras.Dominio.csproj" />
     <Project Path="src/MovimentacoesFinanceiras.Infraestrutura/MovimentacoesFinanceiras.Infraestrutura.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Mensagens/MovimentacoesFinanceiras.Mensagens.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Worker/MovimentacoesFinanceiras.Worker.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Produtor/MovimentacoesFinanceiras.Produtor.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Api.Testes/Api.Testes.csproj" />
     <Project Path="tests/Dominio.Testes/Dominio.Testes.csproj" />
+    <Project Path="tests/Worker.Testes/Worker.Testes.csproj" />
+    <Project Path="tests/Produtor.Testes/Produtor.Testes.csproj" />
   </Folder>
 </Solution>

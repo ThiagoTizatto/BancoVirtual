@@ -1,9 +1,12 @@
 using MediatR;
+using MovimentacoesFinanceiras.Aplicacao.Metricas;
 using MovimentacoesFinanceiras.Dominio.Contas;
 
 namespace MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 
-public class RegistrarMovimentacaoHandler(IContaRepository repositorio)
+public class RegistrarMovimentacaoHandler(
+    IContaRepository repositorio,
+    MetricasMovimentacao metricas)
     : IRequestHandler<RegistrarMovimentacaoCommand, LancamentoResponse>
 {
     public async Task<LancamentoResponse> Handle(RegistrarMovimentacaoCommand request, CancellationToken cancellationToken)
@@ -21,8 +24,11 @@ public class RegistrarMovimentacaoHandler(IContaRepository repositorio)
 
         var dinheiro = Dinheiro.De(request.Valor);
 
-        var lancamento = await repositorio.RegistrarMovimentacaoAsync(
-            request.ContaId, request.Tipo, dinheiro, request.Descricao, request.ChaveIdempotencia, cancellationToken);
+        var lancamento = await PoliticasResiliencia.Combinada.ExecuteAsync(
+            () => repositorio.RegistrarMovimentacaoAsync(
+                request.ContaId, request.Tipo, dinheiro, request.Descricao, request.ChaveIdempotencia, cancellationToken));
+
+        metricas.RegistrarMovimentacao(request.Tipo.ToString());
 
         return ToResponse(lancamento);
     }

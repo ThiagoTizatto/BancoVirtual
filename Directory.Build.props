@@ -7,4 +7,38 @@
     <AnalysisMode>All</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
+
+  <PropertyGroup Label="Versões de Pacotes">
+    <!-- Plataforma .NET — versão acompanha o TargetFramework -->
+    <PlataformaVersion>10.*</PlataformaVersion>
+
+    <!-- Aplicação -->
+    <FluentValidationVersion>11.*</FluentValidationVersion>
+    <MediatRVersion>12.*</MediatRVersion>
+    <NpgsqlVersion>9.*</NpgsqlVersion>
+    <PollyVersion>8.*</PollyVersion>
+
+    <!-- Serilog -->
+    <SerilogAspNetCoreVersion>9.*</SerilogAspNetCoreVersion>
+    <SerilogEnrichersEnvironmentVersion>3.0.1</SerilogEnrichersEnvironmentVersion>
+    <SerilogSinksConsoleVersion>6.*</SerilogSinksConsoleVersion>
+
+    <!-- OpenTelemetry -->
+    <OpenTelemetryVersion>1.*</OpenTelemetryVersion>
+    <OpenTelemetryPrometheusVersion>1.10.0-beta.1</OpenTelemetryPrometheusVersion>
+
+    <!-- API -->
+    <SwashbuckleVersion>6.*</SwashbuckleVersion>
+
+    <!-- Testes -->
+    <XunitVersion>2.9.3</XunitVersion>
+    <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
+    <FluentAssertionsVersion>6.*</FluentAssertionsVersion>
+    <TestSdkVersion>17.14.1</TestSdkVersion>
+    <CoverletVersion>6.0.4</CoverletVersion>
+    <TestcontainersVersion>4.*</TestcontainersVersion>
+
+    <!-- Load test -->
+    <NBomberVersion>5.*</NBomberVersion>
+  </PropertyGroup>
 </Project>

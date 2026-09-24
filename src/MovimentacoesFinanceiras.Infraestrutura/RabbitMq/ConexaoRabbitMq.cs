@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace MovimentacoesFinanceiras.Worker.RabbitMq;
+namespace MovimentacoesFinanceiras.Infraestrutura.RabbitMq;
 
 public sealed partial class ConexaoRabbitMq : IConexaoRabbitMq
 {

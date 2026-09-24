@@ -6,7 +6,7 @@ using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 using MovimentacoesFinanceiras.Dominio.Contas;
 using MovimentacoesFinanceiras.Dominio.Contas.Excecoes;
 using MovimentacoesFinanceiras.Mensagens;
-using MovimentacoesFinanceiras.Worker.Processamento;
+using MovimentacoesFinanceiras.Infraestrutura.Contas.RabbitMq;
 using NSubstitute;
 
 namespace Worker.Testes.Processamento;

@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MovimentacoesFinanceiras.Infraestrutura.RabbitMq;
 using MovimentacoesFinanceiras.Mensagens;
-using MovimentacoesFinanceiras.Worker.Processamento;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace MovimentacoesFinanceiras.Worker.RabbitMq;
+namespace MovimentacoesFinanceiras.Infraestrutura.Contas.RabbitMq;
 
 public sealed partial class ConsumidorDeMovimentacoes : BackgroundService
 {

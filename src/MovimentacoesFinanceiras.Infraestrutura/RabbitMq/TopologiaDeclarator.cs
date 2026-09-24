@@ -1,7 +1,7 @@
 using MovimentacoesFinanceiras.Mensagens;
 using RabbitMQ.Client;
 
-namespace MovimentacoesFinanceiras.Worker.RabbitMq;
+namespace MovimentacoesFinanceiras.Infraestrutura.RabbitMq;
 
 public sealed class TopologiaDeclarator
 {

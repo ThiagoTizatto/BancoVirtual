@@ -35,19 +35,9 @@ services:
       dockerfile: src/MovimentacoesFinanceiras.Api/Dockerfile
     environment:
       ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=movimentacoes;Username=postgres;Password=postgres"
+      RabbitMq__Host: rabbitmq
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  worker:
-    build:
-      context: .
-      dockerfile: src/MovimentacoesFinanceiras.Worker/Dockerfile
-    environment:
-      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=movimentacoes;Username=postgres;Password=postgres"
-      RabbitMq__Host: rabbitmq
     depends_on:
       postgres:
         condition: service_healthy

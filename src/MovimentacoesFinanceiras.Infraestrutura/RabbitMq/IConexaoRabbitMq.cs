@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-namespace MovimentacoesFinanceiras.Worker.RabbitMq;
+namespace MovimentacoesFinanceiras.Infraestrutura.RabbitMq;
 
 public interface IConexaoRabbitMq : IAsyncDisposable
 {

@@ -5,7 +5,7 @@ using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 using MovimentacoesFinanceiras.Dominio.Contas;
 using MovimentacoesFinanceiras.Mensagens;
 
-namespace MovimentacoesFinanceiras.Worker.Processamento;
+namespace MovimentacoesFinanceiras.Infraestrutura.Contas.RabbitMq;
 
 public sealed partial class ProcessadorDeMovimentacao
 {

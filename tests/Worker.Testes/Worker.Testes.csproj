@@ -18,7 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\MovimentacoesFinanceiras.Worker\MovimentacoesFinanceiras.Worker.csproj" />
+        <ProjectReference Include="..\..\src\MovimentacoesFinanceiras.Infraestrutura\MovimentacoesFinanceiras.Infraestrutura.csproj" />
     </ItemGroup>
 
 </Project>

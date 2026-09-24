@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\MovimentacoesFinanceiras.Dominio\MovimentacoesFinanceiras.Dominio.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentValidation" Version="$(FluentValidationVersion)" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="$(FluentValidationVersion)" />
+        <PackageReference Include="MediatR" Version="$(MediatRVersion)" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(PlataformaVersion)" />
+        <PackageReference Include="Npgsql" Version="$(NpgsqlVersion)" />
+        <PackageReference Include="Polly" Version="$(PollyVersion)" />
+    </ItemGroup>
+
+</Project>

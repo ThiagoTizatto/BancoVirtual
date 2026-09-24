@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MovimentacoesFinanceiras.Api/MovimentacoesFinanceiras.Api.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Aplicacao/MovimentacoesFinanceiras.Aplicacao.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Dominio/MovimentacoesFinanceiras.Dominio.csproj" />
+    <Project Path="src/MovimentacoesFinanceiras.Infraestrutura/MovimentacoesFinanceiras.Infraestrutura.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Api.Testes/Api.Testes.csproj" />
+    <Project Path="tests/Dominio.Testes/Dominio.Testes.csproj" />
+  </Folder>
+</Solution>

@@ -45,8 +45,10 @@ app.UseMiddleware<MovimentacoesFinanceiras.Api.Middlewares.CorrelacaoIdMiddlewar
 app.UseMiddleware<MovimentacoesFinanceiras.Api.Middlewares.TratadorDeExcecoesMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 app.MapHealthChecks("/saude");
+app.MapPrometheusScrapingEndpoint("/metrics");
 
 await app.RunAsync();
 

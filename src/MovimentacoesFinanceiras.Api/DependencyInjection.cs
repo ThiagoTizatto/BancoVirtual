@@ -1,6 +1,9 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using MovimentacoesFinanceiras.Api.Autenticacao;
+using OpenTelemetry.Metrics;
 using System.Text.Json.Serialization;
 
 namespace MovimentacoesFinanceiras.Api;
@@ -61,6 +64,31 @@ public static class ServiceCollectionExtensions
                     },
                     Array.Empty<string>()
                 }
+            });
+        });
+
+        services.AddOpenTelemetry()
+            .WithMetrics(m => m
+                .AddAspNetCoreInstrumentation()
+                .AddMeter(MovimentacoesFinanceiras.Aplicacao.Metricas.MetricasMovimentacao.NomeMeter)
+                .AddPrometheusExporter());
+
+        services.AddRateLimiter(opcoes =>
+        {
+            opcoes.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            opcoes.AddPolicy("por-api-key", contexto =>
+            {
+                var chave = contexto.Request.Headers["X-Api-Key"].FirstOrDefault()
+                    ?? contexto.Connection.RemoteIpAddress?.ToString()
+                    ?? "anonimo";
+
+                return RateLimitPartition.GetFixedWindowLimiter(chave, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromSeconds(10),
+                    QueueLimit = 0
+                });
             });
         });
 

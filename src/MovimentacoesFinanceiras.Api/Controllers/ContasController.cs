@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.CriarConta;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Commands.RegistrarMovimentacao;
 using MovimentacoesFinanceiras.Aplicacao.Contas.Queries.ConsultarSaldo;
@@ -14,6 +15,7 @@ namespace MovimentacoesFinanceiras.Api.Controllers;
 [Route("contas")]
 [Produces("application/json")]
 [Authorize]
+[EnableRateLimiting("por-api-key")]
 public class ContasController(IMediator mediador) : ControllerBase
 {
     /// <summary>Cria uma nova conta para um cliente.</summary>

@@ -14,12 +14,12 @@ docker compose up --build
 
 Sobe quatro serviços:
 
-| Serviço | URL | Descrição |
+| Serviço | URL | Swagger |
 |---|---|---|
-| `api` | `http://localhost:8080` | API REST + consumidor RabbitMQ interno |
-| `produtor` | `http://localhost:8081` | Endpoint de publicação de movimentações |
+| `api` | `http://localhost:8080` | `http://localhost:8080` (raiz) |
+| `produtor` | `http://localhost:8081` | `http://localhost:8081` (raiz) |
 | `rabbitmq` | `http://localhost:15672` | Management UI (guest/guest) |
-| `postgres` | `localhost:5432` | PostgreSQL |
+| `postgres` | `localhost:5432` | — |
 
 As migrations são aplicadas no startup da Api. A topologia RabbitMQ (exchanges, filas, DLQ) é declarada antes de iniciar o consumidor.
 

@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <PackageReference Include="RabbitMQ.Client" Version="$(RabbitMqClientVersion)" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="$(SwashbuckleVersion)" />
     </ItemGroup>
 
     <ItemGroup>

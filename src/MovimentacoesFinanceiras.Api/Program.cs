@@ -11,19 +11,26 @@ builder.Host.UseSerilog((ctx, config) =>
         .ReadFrom.Configuration(ctx.Configuration)
         .Enrich.FromLogContext()
         .Enrich.WithMachineName()
+        .Destructure.With<MovimentacoesFinanceiras.Api.Logging.RedacaoDadosSensiveis>()
         .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()));
 
 builder.Services
     .AddDominio()
     .AddAplicacao()
     .AddInfraestrutura(builder.Configuration)
-    .AddApi();
+    .AddApi(builder.Configuration);
 
 var app = builder.Build();
 
 if (!app.Environment.IsEnvironment("Testing"))
 {
     await app.Services.AplicarMigracoesAsync();
+}
+
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
 app.UseSwagger();
@@ -36,6 +43,8 @@ app.UseSwaggerUI(opcoes =>
 app.UseSerilogRequestLogging();
 app.UseMiddleware<MovimentacoesFinanceiras.Api.Middlewares.CorrelacaoIdMiddleware>();
 app.UseMiddleware<MovimentacoesFinanceiras.Api.Middlewares.TratadorDeExcecoesMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/saude");
 
